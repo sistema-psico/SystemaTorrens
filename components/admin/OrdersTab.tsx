@@ -1,0 +1,221 @@
+import React, { useState } from 'react';
+import { Reseller, ResellerOrder, Message } from '../../types';
+import { Truck, CheckCircle, Clock, Trash2, Package, ChevronDown, ChevronUp } from 'lucide-react';
+
+interface OrdersTabProps {
+    resellers: Reseller[];
+    setResellers: (resellers: Reseller[]) => void;
+}
+
+const OrdersTab: React.FC<OrdersTabProps> = ({ resellers, setResellers }) => {
+    const [filterStatus, setFilterStatus] = useState<'Todos' | 'Pendiente' | 'En Camino' | 'Entregado'>('Todos');
+    const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+
+    const toggleDetails = (orderId: string) => {
+        setExpandedOrderId(expandedOrderId === orderId ? null : orderId);
+    };
+
+    const updateOrderStatus = (resellerId: string, orderId: string, newStatus: ResellerOrder['status']) => {
+        const updatedResellers = resellers.map(r => {
+            if (r.id === resellerId) {
+                // 1. Encontrar el pedido actual para verificar su estado PREVIO
+                const currentOrder = r.orders.find(o => o.id === orderId);
+                
+                // Si no existe o el estado es el mismo, no hacemos nada
+                if (!currentOrder || currentOrder.status === newStatus) return r;
+
+                // 2. Lógica de Stock Inteligente (Suma o Resta según el cambio)
+                let updatedStock = [...r.stock]; // Copia del stock para modificar
+
+                // CASO A: Se marca como 'Entregado' (y antes NO lo estaba) -> SUMAR STOCK
+                if (newStatus === 'Entregado' && currentOrder.status !== 'Entregado') {
+                    currentOrder.items.forEach(item => {
+                         const prodIndex = updatedStock.findIndex(p => p.id === item.id);
+                         if (prodIndex >= 0) {
+                             updatedStock[prodIndex] = {
+                                 ...updatedStock[prodIndex],
+                                 stock: updatedStock[prodIndex].stock + item.quantity
+                             };
+                         } else {
+                             // Si es un producto nuevo para el revendedor, lo agregamos a su inventario
+                             // (Usamos los datos del item del carrito, limpiando campos extra)
+                             const { quantity, discount, selectedPresentation, ...productData } = item;
+                             updatedStock.push({
+                                 ...productData,
+                                 stock: quantity
+                             });
+                         }
+                    });
+                }
+                
+                // CASO B: Estaba 'Entregado' y se cambia a otro estado (ej. error, vuelve a 'En Camino') -> RESTAR STOCK (Revertir)
+                else if (currentOrder.status === 'Entregado' && newStatus !== 'Entregado') {
+                     currentOrder.items.forEach(item => {
+                         const prodIndex = updatedStock.findIndex(p => p.id === item.id);
+                         if (prodIndex >= 0) {
+                             // Restamos, asegurando que no baje de 0 (protección extra)
+                             updatedStock[prodIndex] = {
+                                 ...updatedStock[prodIndex],
+                                 stock: Math.max(0, updatedStock[prodIndex].stock - item.quantity)
+                             };
+                         }
+                    });
+                }
+
+                // 3. Actualizar el pedido en la lista
+                const updatedOrders = r.orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o);
+                
+                // 4. Crear mensaje de notificación automática para el revendedor
+                const notificationMsg: Message = {
+                    id: `SYS-${Date.now()}`,
+                    sender: 'admin',
+                    content: newStatus === 'En Camino' 
+                        ? `🚚 Tu pedido #${orderId} ha sido despachado y está en camino.` 
+                        : newStatus === 'Entregado'
+                            ? `✅ Tu pedido #${orderId} ha sido entregado. El stock se ha sumado a tu inventario.`
+                            : `ℹ️ El estado de tu pedido #${orderId} ha cambiado a: ${newStatus}`,
+                    timestamp: new Date().toLocaleString(),
+                    read: false
+                };
+
+                return {
+                    ...r,
+                    orders: updatedOrders,
+                    messages: [...r.messages, notificationMsg],
+                    stock: updatedStock
+                };
+            }
+            return r;
+        });
+        setResellers(updatedResellers);
+    };
+
+    const deleteOrder = (resellerId: string, orderId: string) => {
+        if (!window.confirm('¿Estás seguro de eliminar este pedido del historial?')) return;
+        
+        const updatedResellers = resellers.map(r => {
+            if (r.id === resellerId) {
+                return {
+                    ...r,
+                    orders: r.orders.filter(o => o.id !== orderId)
+                };
+            }
+            return r;
+        });
+        setResellers(updatedResellers);
+    };
+    
+    // Aplanar y ordenar pedidos para la vista unificada
+    const allOrders = resellers.flatMap(r => 
+        r.orders.map(o => ({ ...o, resellerId: r.id, resellerName: r.name }))
+    ).filter(o => {
+        if (filterStatus !== 'Todos' && o.status !== filterStatus) return false;
+        return true;
+    }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'Pendiente': return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20';
+            case 'En Camino': return 'text-blue-500 bg-blue-500/10 border-blue-500/20';
+            case 'Entregado': return 'text-green-500 bg-green-500/10 border-green-500/20';
+            default: return 'text-gray-500 bg-gray-500/10';
+        }
+    };
+
+    return (
+         <div className="animate-fade-in space-y-6">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                    <h1 className="text-3xl font-black text-white italic">GESTIÓN DE <span className="text-[#ccff00]">PEDIDOS</span></h1>
+                    <p className="text-zinc-400 text-sm">Controla los envíos a tus revendedores.</p>
+                </div>
+                <div className="flex bg-black/40 p-1 rounded-lg border border-white/10">
+                    {['Todos', 'Pendiente', 'En Camino', 'Entregado'].map(status => (
+                            <button
+                            key={status}
+                            onClick={() => setFilterStatus(status as any)}
+                            className={`px-4 py-2 rounded-md text-xs font-bold transition-all ${
+                                filterStatus === status 
+                                ? 'bg-zinc-700 text-white shadow' 
+                                : 'text-zinc-500 hover:text-white'
+                            }`}
+                        >
+                            {status === 'Pendiente' ? 'Preparando' : status}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <div className="grid gap-4">
+                {allOrders.map(order => (
+                    <div key={order.id} className="bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-2xl overflow-hidden hover:border-[#ccff00]/20 transition-colors">
+                        <div className="p-6 flex flex-col md:flex-row justify-between items-center gap-6">
+                            <div className="flex items-center gap-4 w-full md:w-auto">
+                                <div className={`p-4 rounded-xl border ${getStatusColor(order.status)}`}>
+                                    <Package className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <h3 className="text-white font-bold text-lg">{order.resellerName}</h3>
+                                        <span className="text-zinc-500 text-xs bg-black/30 px-2 py-0.5 rounded font-mono">{order.id}</span>
+                                    </div>
+                                    <p className="text-zinc-400 text-sm flex items-center gap-2">
+                                        <Clock className="w-3 h-3" /> {order.date} 
+                                        <span className="text-zinc-600">|</span> 
+                                        {order.items.length} items
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                                <span className="text-xs text-zinc-500 uppercase tracking-wider">Total Pedido</span>
+                                <span className="text-2xl font-black text-[#ccff00]">${order.total.toLocaleString()}</span>
+                            </div>
+                            <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+                                <button onClick={() => toggleDetails(order.id)} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-white transition-colors" title="Ver productos">
+                                    {expandedOrderId === order.id ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                                </button>
+                                {order.status === 'Pendiente' && (
+                                    <button onClick={() => updateOrderStatus(order.resellerId, order.id, 'En Camino')} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-colors">
+                                        <Truck className="w-4 h-4" /> Despachar
+                                    </button>
+                                )}
+                                {order.status === 'En Camino' && (
+                                    <button onClick={() => updateOrderStatus(order.resellerId, order.id, 'Entregado')} className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-xs font-bold transition-colors">
+                                        <CheckCircle className="w-4 h-4" /> Entregado
+                                    </button>
+                                )}
+                                {order.status === 'Entregado' && (
+                                    <button onClick={() => deleteOrder(order.resellerId, order.id)} className="flex items-center gap-2 px-4 py-2 bg-red-900/10 hover:bg-red-900/30 text-red-400 border border-red-900/30 rounded-lg text-xs font-bold transition-colors">
+                                        <Trash2 className="w-4 h-4" /> Eliminar
+                                    </button>
+                                )}
+                                <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(order.status)}`}>
+                                    {order.status === 'Pendiente' ? 'Preparando' : order.status}
+                                </span>
+                            </div>
+                        </div>
+                        {expandedOrderId === order.id && (
+                            <div className="border-t border-white/5 bg-black/20 p-6 animate-fade-in">
+                                <h4 className="text-zinc-400 text-xs font-bold uppercase mb-4">Detalle de Productos Solicitados</h4>
+                                <div className="space-y-2">
+                                    {order.items.map((item, idx) => (
+                                        <div key={idx} className="flex justify-between items-center bg-white/5 p-3 rounded-lg border border-white/5">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded bg-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-500">{idx + 1}</div>
+                                                <div><p className="text-white font-bold text-sm">{item.name}</p><p className="text-zinc-500 text-xs">{item.brand} - {item.category}</p></div>
+                                            </div>
+                                            <div className="text-right"><span className="text-white font-bold">x{item.quantity}</span><span className="text-zinc-500 text-xs ml-2">(${(item.price * item.quantity).toLocaleString()})</span></div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                ))}
+                {allOrders.length === 0 && <div className="text-center py-20 text-zinc-500 bg-zinc-900/20 rounded-2xl border border-white/5"><p>No hay pedidos en esta categoría.</p></div>}
+            </div>
+        </div>
+    );
+};
+
+export default OrdersTab;
