@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+// ... (Tus imports de componentes siguen igual: Navbar, Hero, etc.)
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import ProductCard from './components/ProductCard';
@@ -10,25 +11,29 @@ import { AdminPanel } from './components/AdminPanel';
 import ResellerPanel from './components/ResellerPanel';
 import Login from './components/Login';
 import SocialProof from './components/SocialProof';
-import InstallAppButton from './components/InstallAppButton'; // <--- IMPORTAR
 import { initialProducts, initialContactInfo, initialBanners, initialResellers, initialAdminClients, initialSiteContent, initialPaymentConfig, initialSocialReviews } from './data';
 import { Product, CartItem, Category, ContactInfo, Banner, Reseller, Client, SiteContent, User, PaymentConfig, SocialReview, Brand, PeptoneFormula } from './types';
 import { Sparkles, SlidersHorizontal, Lock, MapPin, Phone, Mail, Instagram, Bell } from 'lucide-react';
-import { useLocalStorage } from './hooks/useLocalStorage';
+import InstallAppButton from './components/InstallAppButton'; // Asegúrate de tener este import si agregaste el botón PWA
+
+// CAMBIO 1: Importar useFirestore en lugar de useLocalStorage
+import { useFirestore } from './hooks/useFirestore';
 
 function App() {
-  // --- ESTADO PERSISTENTE (Local Storage) ---
-  const [products, setProducts] = useLocalStorage<Product[]>('products', initialProducts);
-  const [contactInfo, setContactInfo] = useLocalStorage<ContactInfo>('contactInfo', initialContactInfo);
-  const [paymentConfig, setPaymentConfig] = useLocalStorage<PaymentConfig>('paymentConfig', initialPaymentConfig);
-  const [banners, setBanners] = useLocalStorage<Banner[]>('banners', initialBanners);
-  const [resellers, setResellers] = useLocalStorage<Reseller[]>('resellers', initialResellers);
-  const [adminClients, setAdminClients] = useLocalStorage<Client[]>('adminClients', initialAdminClients);
-  const [siteContent, setSiteContent] = useLocalStorage<SiteContent>('siteContent', initialSiteContent);
-  const [socialReviews, setSocialReviews] = useLocalStorage<SocialReview[]>('socialReviews', initialSocialReviews);
+  // CAMBIO 2: Usar useFirestore para todos los estados persistentes
+  // (Nota: useFirestore devuelve un tercer valor 'loading', pero podemos ignorarlo por ahora si queremos mantenerlo simple)
+  const [products, setProducts] = useFirestore<Product[]>('products', initialProducts);
+  const [contactInfo, setContactInfo] = useFirestore<ContactInfo>('contactInfo', initialContactInfo);
+  const [paymentConfig, setPaymentConfig] = useFirestore<PaymentConfig>('paymentConfig', initialPaymentConfig);
+  const [banners, setBanners] = useFirestore<Banner[]>('banners', initialBanners);
+  const [resellers, setResellers] = useFirestore<Reseller[]>('resellers', initialResellers);
+  const [adminClients, setAdminClients] = useFirestore<Client[]>('adminClients', initialAdminClients);
+  const [siteContent, setSiteContent] = useFirestore<SiteContent>('siteContent', initialSiteContent);
+  const [socialReviews, setSocialReviews] = useFirestore<SocialReview[]>('socialReviews', initialSocialReviews);
   
-  // --- ESTADO DE INTERFAZ ---
+  // --- ESTADO DE INTERFAZ (Se mantiene igual con useState normal) ---
   const [currentView, setCurrentView] = useState<'shop' | 'admin' | 'reseller' | 'login'>('shop');
+  // ... resto de tus estados (activeBrand, cart, etc.) ...
   const [activeBrand, setActiveBrand] = useState<Brand>('informa');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -42,12 +47,13 @@ function App() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
+  // ... (El resto de la lógica de tu App.tsx se mantiene EXACTAMENTE IGUAL) ...
+  // ... Solo asegúrate de copiar el resto de tu archivo App.tsx que ya tenías funcionando ...
+  
   // --- EFECTO: DETECTAR NUEVOS MENSAJES / ACTUALIZACIONES ---
   useEffect(() => {
-      // Solo ejecutamos esto si hay un revendedor logueado y estamos en su vista
       if (loggedReseller && currentView === 'reseller') {
           const updatedUser = resellers.find(r => r.id === loggedReseller.id);
-          
           if (updatedUser) {
               const lastMsg = updatedUser.messages[updatedUser.messages.length - 1];
               if (lastMsg && lastMsg.sender === 'admin' && !lastMsg.read && !showToast) {
@@ -61,7 +67,6 @@ function App() {
       }
   }, [resellers, loggedReseller, currentView, showToast]);
 
-  // --- LÓGICA DE NEGOCIO ---
   const filteredProducts = useMemo(() => {
       return products.filter(p => {
           const brandMatch = p.brand === activeBrand;
@@ -102,7 +107,6 @@ function App() {
     products.filter(p => p.brand === activeBrand).map(p => p.category)
   ))].sort() as Category[];
 
-  // --- CARRITO ---
   const addToCart = (product: Product, quantity: number = 1, discount: number = 0) => {
     if (product.stock < quantity) return;
     setCart(prev => {
@@ -147,87 +151,29 @@ function App() {
   const isIqual = activeBrand === 'iqual';
   const isBio = activeBrand === 'biofarma';
 
-  const getBgClass = () => {
-      if (isSports) return 'bg-[#0a0a0a]';
-      if (isIqual) return 'bg-slate-900';
-      if (isBio) return 'bg-white';
-      return 'bg-stone-50';
-  };
-
-  const getCatBtnClass = (isActive: boolean) => {
-      if (isActive) {
-          if (isSports) return 'bg-[#ccff00] text-black font-bold shadow-[0_0_20px_rgba(204,255,0,0.3)]';
-          if (isIqual) return 'bg-indigo-600 text-white font-bold shadow-[0_0_20px_rgba(99,102,241,0.3)]';
-          if (isBio) return 'bg-blue-900 text-white font-bold shadow-lg';
-          return 'bg-emerald-800 text-white shadow-lg';
-      } else {
-          if (isSports) return 'bg-zinc-800/50 border border-white/10 text-gray-300 hover:bg-zinc-700/50 hover:border-[#ccff00]/50';
-          if (isIqual) return 'bg-slate-800/50 border border-white/10 text-slate-300 hover:bg-slate-700/50 hover:border-indigo-500/50';
-          if (isBio) return 'bg-blue-50 border border-blue-100 text-blue-900 hover:bg-blue-100';
-          return 'bg-white/60 border border-stone-200 text-stone-600 hover:bg-white/80';
-      }
-  };
+  const getBgClass = () => { if (isSports) return 'bg-[#0a0a0a]'; if (isIqual) return 'bg-slate-900'; if (isBio) return 'bg-white'; return 'bg-stone-50'; };
+  const getCatBtnClass = (isActive: boolean) => { if (isActive) { if (isSports) return 'bg-[#ccff00] text-black font-bold shadow-[0_0_20px_rgba(204,255,0,0.3)]'; if (isIqual) return 'bg-indigo-600 text-white font-bold shadow-[0_0_20px_rgba(99,102,241,0.3)]'; if (isBio) return 'bg-blue-900 text-white font-bold shadow-lg'; return 'bg-emerald-800 text-white shadow-lg'; } else { if (isSports) return 'bg-zinc-800/50 border border-white/10 text-gray-300 hover:bg-zinc-700/50 hover:border-[#ccff00]/50'; if (isIqual) return 'bg-slate-800/50 border border-white/10 text-slate-300 hover:bg-slate-700/50 hover:border-indigo-500/50'; if (isBio) return 'bg-blue-50 border border-blue-100 text-blue-900 hover:bg-blue-100'; return 'bg-white/60 border border-stone-200 text-stone-600 hover:bg-white/80'; } };
 
   if (currentView === 'login') {
-      return (
-          <Login 
-            resellers={resellers}
-            onLoginSuccess={handleUnifiedLogin}
-            onClose={() => setCurrentView('shop')}
-          />
-      );
+      return <Login resellers={resellers} onLoginSuccess={handleUnifiedLogin} onClose={() => setCurrentView('shop')} />;
   }
 
   if (currentView === 'admin') {
-      return (
-        <AdminPanel 
-            products={products}
-            setProducts={setProducts}
-            contactInfo={contactInfo}
-            setContactInfo={setContactInfo}
-            paymentConfig={paymentConfig}
-            setPaymentConfig={setPaymentConfig}
-            banners={banners}
-            setBanners={setBanners}
-            socialReviews={socialReviews}
-            setSocialReviews={setSocialReviews}
-            resellers={resellers}
-            setResellers={setResellers}
-            adminClients={adminClients}
-            setAdminClients={setAdminClients}
-            onClose={() => setCurrentView('shop')}
-            siteContent={siteContent}
-            setSiteContent={setSiteContent}
-        />
-      );
+      return <AdminPanel products={products} setProducts={setProducts} contactInfo={contactInfo} setContactInfo={setContactInfo} paymentConfig={paymentConfig} setPaymentConfig={setPaymentConfig} banners={banners} setBanners={setBanners} socialReviews={socialReviews} setSocialReviews={setSocialReviews} resellers={resellers} setResellers={setResellers} adminClients={adminClients} setAdminClients={setAdminClients} onClose={() => setCurrentView('shop')} siteContent={siteContent} setSiteContent={setSiteContent} />;
   }
 
   if (currentView === 'reseller') {
     return (
         <>
-            <ResellerPanel 
-                resellers={resellers}
-                setResellers={setResellers}
-                onClose={() => {
-                    setLoggedReseller(null);
-                    setCurrentView('shop');
-                }}
-                initialUser={loggedReseller}
-                products={products}
-            />
-            
-            {showToast && (
-                <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-[#ccff00] text-black px-6 py-3 rounded-full shadow-2xl z-[100] animate-slide-up font-bold flex items-center gap-2 border border-black/10">
-                    <Bell className="w-4 h-4" /> {toastMessage}
-                </div>
-            )}
+            <ResellerPanel resellers={resellers} setResellers={setResellers} onClose={() => { setLoggedReseller(null); setCurrentView('shop'); }} initialUser={loggedReseller} products={products} />
+            {showToast && <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-[#ccff00] text-black px-6 py-3 rounded-full shadow-2xl z-[100] animate-slide-up font-bold flex items-center gap-2 border border-black/10"><Bell className="w-4 h-4" /> {toastMessage}</div>}
         </>
     );
   }
 
   return (
     <div className={`min-h-screen relative transition-colors duration-700 ${getBgClass()}`}>
-      
+      {/* ... (Todo el contenido visual de la tienda pública sigue igual) ... */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
          {isSports && ( <><div className="absolute top-0 left-1/4 w-96 h-96 bg-[#ccff00]/10 rounded-full blur-[100px] animate-blob"></div><div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-900/10 rounded-full blur-[100px] animate-blob animation-delay-2000"></div></> )}
          {isIqual && ( <><div className="absolute top-20 right-0 w-[500px] h-[500px] bg-indigo-900/10 rounded-full blur-[100px] animate-blob"></div><div className="absolute bottom-20 left-0 w-[500px] h-[500px] bg-slate-700/20 rounded-full blur-[100px] animate-blob animation-delay-2000"></div></> )}
@@ -235,49 +181,26 @@ function App() {
       </div>
 
       <div className="relative z-10">
-        <Navbar 
-            cart={cart} onCartClick={() => setIsCartOpen(true)} activeBrand={activeBrand} onBrandSwitch={(brand) => { setActiveBrand(brand); setSelectedCategory('Todos'); }} currentUser={currentUser} siteContent={siteContent} 
-        />
-        
+        <Navbar cart={cart} onCartClick={() => setIsCartOpen(true)} activeBrand={activeBrand} onBrandSwitch={(brand) => { setActiveBrand(brand); setSelectedCategory('Todos'); }} currentUser={currentUser} siteContent={siteContent} />
         <Hero activeBrand={activeBrand} banners={banners} products={products} onAddBundleToCart={addToCart} siteContent={siteContent} />
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-            
             {activeBrand !== 'biofarma' && (
                 <div className="mb-8 overflow-x-auto pb-4">
                     <div className="flex flex-wrap gap-3 justify-center">
-                    {categories.map((cat, idx) => (
-                        <button
-                            key={cat}
-                            onClick={() => setSelectedCategory(cat as Category)}
-                            className={`px-6 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap ${getCatBtnClass(selectedCategory === cat)}`}
-                        >
-                        {cat}
-                        </button>
-                    ))}
+                    {categories.map((cat) => ( <button key={cat} onClick={() => setSelectedCategory(cat as Category)} className={`px-6 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap ${getCatBtnClass(selectedCategory === cat)}`}>{cat}</button> ))}
                     </div>
                 </div>
             )}
-
             {filteredProducts.length > 0 && (
                 <div className="mb-16">
                     {activeBrand === 'biofarma' && <h3 className="text-2xl font-bold text-blue-900 mb-6 border-l-4 border-blue-500 pl-4">Destacados y Kits</h3>}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filteredProducts.map((product, idx) => (
-                        <div key={product.id} className="animate-slide-up" style={{ animationDelay: `${idx * 0.05}s` }}>
-                            <ProductCard product={product} onAddToCart={(p) => addToCart(p, 1)} onClick={(p) => setSelectedProduct(p)} />
-                        </div>
-                        ))}
+                        {filteredProducts.map((product, idx) => ( <div key={product.id} className="animate-slide-up" style={{ animationDelay: `${idx * 0.05}s` }}><ProductCard product={product} onAddToCart={(p) => addToCart(p, 1)} onClick={(p) => setSelectedProduct(p)} /></div> ))}
                     </div>
                 </div>
             )}
-
-            {activeBrand === 'biofarma' && (
-                <div className="mb-16 animate-slide-up">
-                    <BioFarmaCatalog onAddToCart={(p, qty) => { addToCart(p, qty); setIsCartOpen(true); }} onSelect={handleSelectPeptone} />
-                </div>
-            )}
-
+            {activeBrand === 'biofarma' && ( <div className="mb-16 animate-slide-up"><BioFarmaCatalog onAddToCart={(p, qty) => { addToCart(p, qty); setIsCartOpen(true); }} onSelect={handleSelectPeptone} /></div> )}
             {filteredProducts.length === 0 && activeBrand !== 'biofarma' && (
                 <div className="text-center py-20 animate-fade-in bg-white/5 rounded-2xl border border-white/5">
                     <SlidersHorizontal className={`w-12 h-12 mx-auto mb-4 ${isSports || isIqual ? 'text-gray-600' : 'text-gray-300'}`} />
@@ -288,24 +211,15 @@ function App() {
             )}
         </main>
 
-        {/* Botón flotante para instalar PWA */}
         <InstallAppButton />
 
-        {/* Botón flotante Quiz */}
-        <button 
-            onClick={() => setIsQuizOpen(true)}
-            className={`fixed bottom-6 right-6 z-40 p-4 rounded-full shadow-[0_0_30px_rgba(0,0,0,0.3)] animate-blob hover:scale-110 transition-transform ${
-                isSports ? 'bg-[#ccff00] text-black' : isIqual ? 'bg-indigo-600 text-white' : isBio ? 'bg-blue-600 text-white' : 'bg-emerald-600 text-white'
-            }`}
-        >
+        <button onClick={() => setIsQuizOpen(true)} className={`fixed bottom-6 right-6 z-40 p-4 rounded-full shadow-[0_0_30px_rgba(0,0,0,0.3)] animate-blob hover:scale-110 transition-transform ${isSports ? 'bg-[#ccff00] text-black' : isIqual ? 'bg-indigo-600 text-white' : isBio ? 'bg-blue-600 text-white' : 'bg-emerald-600 text-white'}`}>
             <Sparkles className="w-6 h-6" />
         </button>
 
         <SocialProof reviews={socialReviews} activeBrand={activeBrand} />
 
-        <footer className={`${
-            isSports ? 'bg-black/80 border-t border-white/5' : isIqual ? 'bg-slate-900/80 border-t border-white/5' : isBio ? 'bg-white border-t border-blue-100' : 'bg-stone-100/80 border-t border-stone-200'
-        } backdrop-blur-lg pt-16 pb-8`}>
+        <footer className={`${isSports ? 'bg-black/80 border-t border-white/5' : isIqual ? 'bg-slate-900/80 border-t border-white/5' : isBio ? 'bg-white border-t border-blue-100' : 'bg-stone-100/80 border-t border-stone-200'} backdrop-blur-lg pt-16 pb-8`}>
             {/* ... (Footer content) ... */}
             <div className="max-w-7xl mx-auto px-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
@@ -318,9 +232,7 @@ function App() {
                         </p>
                     </div>
                     <div className="text-center md:text-left">
-                        <h3 className={`text-lg font-bold mb-4 ${isSports ? 'text-[#ccff00]' : isIqual ? 'text-indigo-400' : isBio ? 'text-blue-700' : 'text-emerald-700'}`}>
-                            Contacto
-                        </h3>
+                        <h3 className={`text-lg font-bold mb-4 ${isSports ? 'text-[#ccff00]' : isIqual ? 'text-indigo-400' : isBio ? 'text-blue-700' : 'text-emerald-700'}`}>Contacto</h3>
                         <div className={`space-y-3 text-sm ${isSports || isIqual ? 'text-gray-300' : 'text-stone-600'}`}>
                             <div className="flex items-center justify-center md:justify-start gap-2"><MapPin className="w-4 h-4" /> {contactInfo.address}</div>
                             <div className="flex items-center justify-center md:justify-start gap-2"><Phone className="w-4 h-4" /> {contactInfo.phone}</div>
@@ -336,15 +248,7 @@ function App() {
         </footer>
 
         <CartSidebar 
-            isOpen={isCartOpen} 
-            onClose={() => setIsCartOpen(false)}
-            cart={cart}
-            onRemoveItem={removeFromCart}
-            onUpdateQuantity={updateQuantity}
-            activeBrand={activeBrand}
-            contactInfo={contactInfo}
-            paymentConfig={paymentConfig}
-            currentUser={currentUser}
+            isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} cart={cart} onRemoveItem={removeFromCart} onUpdateQuantity={updateQuantity} activeBrand={activeBrand} contactInfo={contactInfo} paymentConfig={paymentConfig} currentUser={currentUser} 
             onLoginRequest={() => { setIsCartOpen(false); setCurrentView('login'); }}
         />
 
