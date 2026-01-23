@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
 import { Reseller } from '../types';
-import { ShieldCheck, LogIn, ChevronLeft, User as UserIcon } from 'lucide-react';
+import { ShieldCheck, LogIn, ChevronLeft } from 'lucide-react';
+import { signInWithEmailAndPassword } from 'firebase/auth'; // Importar función de login
+import { auth } from '../lib/firebase'; // Importar tu instancia de auth
+
+// --- LISTA DE ADMINISTRADORES AUTORIZADOS ---
+// Solo estos correos tendrán acceso al panel de control
+const ADMIN_EMAILS = [
+    'edur900@gmail.com', // Reemplaza con el real
+    'gabrieletorrens@gmail.com'     // Reemplaza con el real
+];
 
 interface LoginProps {
     resellers: Reseller[];
@@ -14,7 +23,7 @@ const Login: React.FC<LoginProps> = ({ resellers, onLoginSuccess, onClose }) => 
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
         setIsLoading(true);
@@ -22,14 +31,18 @@ const Login: React.FC<LoginProps> = ({ resellers, onLoginSuccess, onClose }) => 
         const cleanEmail = email.trim().toLowerCase();
         const cleanPassword = password.trim();
 
-        setTimeout(() => {
-            // 1. Admin
-            if (cleanEmail === 'admin@store.com' && cleanPassword === 'admin123') {
+        try {
+            // 1. INTENTAR LOGIN COMO ADMINISTRADOR (FIREBASE AUTH)
+            if (ADMIN_EMAILS.includes(cleanEmail)) {
+                // Si el correo está en la lista de admins, verificamos con Firebase
+                await signInWithEmailAndPassword(auth, cleanEmail, cleanPassword);
+                // Si Firebase no lanza error, las credenciales son válidas
                 onLoginSuccess('admin');
                 return;
             }
 
-            // 2. Revendedor
+            // 2. INTENTAR LOGIN COMO REVENDEDOR (BASE DE DATOS)
+            // (Mantenemos la lógica actual para revendedores hasta migrarlos a Auth)
             const foundReseller = resellers.find(r => 
                 r.email.trim().toLowerCase() === cleanEmail && 
                 r.password.trim() === cleanPassword && 
@@ -41,29 +54,36 @@ const Login: React.FC<LoginProps> = ({ resellers, onLoginSuccess, onClose }) => 
                 return;
             }
 
-            // 3. Cliente (Si no es admin ni revendedor, es un cliente comprando)
-            // En un sistema real, aquí consultarías a Firebase/Base de datos de clientes.
-            // Para el MVP, permitimos el ingreso si tiene formato de email válido.
+            // 3. CLIENTE (Simulación para compra rápida)
             if (cleanEmail.includes('@') && cleanPassword.length >= 4) {
                 onLoginSuccess('client', { 
                     id: `C-${Date.now()}`,
-                    name: cleanEmail.split('@')[0], // Usamos la parte del email como nombre
+                    name: cleanEmail.split('@')[0],
                     email: cleanEmail,
                     avatar: 'https://images.unsplash.com/photo-1511367461989-f85a21fda167?q=80&w=200&auto=format&fit=crop'
                 });
                 return;
             }
 
-            // 4. Fallo
-            setError('Credenciales incorrectas. Para clientes, use cualquier email válido.');
+            throw new Error('Credenciales no válidas');
+
+        } catch (err: any) {
+            console.error("Login Error:", err);
+            // Mensajes de error amigables
+            if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+                setError('Correo o contraseña de administrador incorrectos.');
+            } else if (err.message === 'Credenciales no válidas') {
+                setError('Usuario no encontrado o contraseña incorrecta.');
+            } else {
+                setError('Ocurrió un error al intentar ingresar.');
+            }
             setIsLoading(false);
-        }, 800);
+        }
     };
 
     return (
         <div className="min-h-screen relative bg-[#0a0a0a] flex items-center justify-center p-4 overflow-hidden font-sans">
             
-            {/* Background Ambience */}
             <div className="fixed inset-0 z-0 pointer-events-none">
                 <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-[#ccff00]/10 rounded-full blur-[100px] animate-blob"></div>
                 <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-900/10 rounded-full blur-[100px] animate-blob animation-delay-2000"></div>
@@ -83,7 +103,7 @@ const Login: React.FC<LoginProps> = ({ resellers, onLoginSuccess, onClose }) => 
                             <ShieldCheck className="w-8 h-8 text-[#ccff00]" />
                         </div>
                         <h2 className="text-2xl font-black text-white italic">INICIAR <span className="text-[#ccff00]">SESIÓN</span></h2>
-                        <p className="text-zinc-500 text-sm mt-2">Acceso para Administradores, Revendedores y Clientes</p>
+                        <p className="text-zinc-500 text-sm mt-2">Acceso Seguro</p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-4">
@@ -94,7 +114,7 @@ const Login: React.FC<LoginProps> = ({ resellers, onLoginSuccess, onClose }) => 
                                 value={email} 
                                 onChange={(e) => setEmail(e.target.value)} 
                                 className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white focus:border-[#ccff00] outline-none transition-colors" 
-                                placeholder="tu@email.com"
+                                placeholder="usuario@email.com"
                                 required
                             />
                         </div>
@@ -128,11 +148,8 @@ const Login: React.FC<LoginProps> = ({ resellers, onLoginSuccess, onClose }) => 
                     </form>
 
                     <div className="mt-8 pt-6 border-t border-white/5 text-center">
-                        <p className="text-xs text-zinc-500 mb-2">
-                            ¿Eres nuevo cliente?
-                        </p>
-                        <p className="text-xs text-zinc-400">
-                            Simplemente ingresa tu email y crea una contraseña para continuar.
+                        <p className="text-xs text-zinc-600">
+                            ¿Problemas para ingresar? Contacta a soporte técnico.
                         </p>
                     </div>
                 </div>
