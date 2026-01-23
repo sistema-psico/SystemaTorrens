@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Product, Brand, Reseller } from '../../types';
-import { Search, Plus, Edit2, Trash2, Eye, EyeOff } from 'lucide-react';
-import Toast, { ToastType } from '../Toast'; // Importar Toast
+import { 
+    Search, Plus, Edit2, Trash2, Eye, EyeOff, Upload, Loader2, Image as ImageIcon
+} from 'lucide-react';
+import Toast, { ToastType } from '../Toast';
+import { useImageUpload } from '../../hooks/useImageUpload'; // <--- Importamos nuestro nuevo hook
 
 interface InventoryTabProps {
     products: Product[];
@@ -12,13 +15,40 @@ interface InventoryTabProps {
 const InventoryTab: React.FC<InventoryTabProps> = ({ products, setProducts, resellers }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterBrand, setFilterBrand] = useState<Brand | 'all'>('all');
+    
+    // Modal State
     const [isEditing, setIsEditing] = useState(false);
     const [currentProduct, setCurrentProduct] = useState<Partial<Product>>({});
 
+    // Hooks
+    const { uploadImage, uploading } = useImageUpload();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    
     // Toast State
     const [toast, setToast] = useState<{ show: boolean; message: string; type: ToastType } | null>(null);
     const showToast = (message: string, type: ToastType = 'error') => {
         setToast({ show: true, message, type });
+    };
+
+    // --- HANDLERS ---
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Validar tamaño (ej: máx 2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            showToast("La imagen es muy pesada (Máx 2MB)", 'error');
+            return;
+        }
+
+        const url = await uploadImage(file, 'products');
+        if (url) {
+            setCurrentProduct(prev => ({ ...prev, image: url }));
+            showToast("Imagen subida correctamente", 'success');
+        } else {
+            showToast("Error al subir imagen", 'error');
+        }
     };
 
     const handleSaveProduct = () => {
@@ -166,25 +196,100 @@ const InventoryTab: React.FC<InventoryTabProps> = ({ products, setProducts, rese
                 </table>
             </div>
 
-            {/* Modal de Edición (Igual que antes) */}
+            {/* PRODUCT MODAL */}
             {isEditing && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
                     <div className="bg-zinc-900 border border-white/10 p-8 rounded-3xl w-full max-w-lg shadow-2xl animate-scale-in max-h-[90vh] overflow-y-auto">
                         <h3 className="text-2xl font-black text-white italic mb-6">EDITAR <span className="text-[#ccff00]">PRODUCTO</span></h3>
-                        {/* ... Campos del formulario (sin cambios estructurales, solo visuales) ... */}
+                        
                         <div className="space-y-4">
-                            <div><label className="block text-xs font-bold text-zinc-400 mb-1">Nombre</label><input type="text" className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#ccff00]" value={currentProduct.name || ''} onChange={e=>setCurrentProduct({...currentProduct, name: e.target.value})} /></div>
-                            <div className="flex gap-4">
-                                <div className="w-1/2"><label className="block text-xs font-bold text-zinc-400 mb-1">Precio</label><input type="number" className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#ccff00]" value={currentProduct.price || 0} onChange={e=>setCurrentProduct({...currentProduct, price: Number(e.target.value)})} /></div>
-                                <div className="w-1/2"><label className="block text-xs font-bold text-zinc-400 mb-1">Stock</label><input type="number" className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#ccff00]" value={currentProduct.stock || 0} onChange={e=>setCurrentProduct({...currentProduct, stock: Number(e.target.value)})} /></div>
+                            
+                            {/* IMAGEN DEL PRODUCTO CON UPLOAD */}
+                            <div className="flex items-center gap-4 mb-4 bg-black/40 p-4 rounded-xl border border-white/5">
+                                <div className="w-20 h-20 bg-zinc-800 rounded-lg flex items-center justify-center overflow-hidden border border-white/10">
+                                    {currentProduct.image ? (
+                                        <img src={currentProduct.image} className="w-full h-full object-cover" alt="Preview" />
+                                    ) : (
+                                        <ImageIcon className="w-8 h-8 text-zinc-600" />
+                                    )}
+                                </div>
+                                <div className="flex-1">
+                                    <label className="block text-xs font-bold text-zinc-400 mb-1">Imagen del Producto</label>
+                                    <div className="flex gap-2">
+                                        <input 
+                                            type="text" 
+                                            placeholder="Pegar URL o subir archivo..." 
+                                            className="flex-1 bg-black/50 border border-white/10 p-2 rounded-lg text-white text-xs outline-none focus:border-[#ccff00]" 
+                                            value={currentProduct.image || ''} 
+                                            onChange={e => setCurrentProduct({...currentProduct, image: e.target.value})} 
+                                        />
+                                        <input 
+                                            type="file" 
+                                            ref={fileInputRef}
+                                            onChange={handleFileChange}
+                                            accept="image/*"
+                                            className="hidden"
+                                        />
+                                        <button 
+                                            onClick={() => fileInputRef.current?.click()}
+                                            disabled={uploading}
+                                            className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-colors disabled:opacity-50"
+                                            title="Subir desde dispositivo"
+                                        >
+                                            {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                                        </button>
+                                    </div>
+                                    <p className="text-[10px] text-zinc-600 mt-1">Formatos: JPG, PNG, WEBP (Máx 2MB)</p>
+                                </div>
                             </div>
-                            {/* ... Resto de campos ... */}
-                             <div><label className="block text-xs font-bold text-zinc-400 mb-1">Marca</label><select value={currentProduct.brand} onChange={e=>setCurrentProduct({...currentProduct, brand: e.target.value as any})} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#ccff00]"><option value="informa">In Forma</option><option value="phisis">Phisis</option><option value="iqual">Iqual</option><option value="biofarma">BioFarma</option></select></div>
-                             <div><label className="block text-xs font-bold text-zinc-400 mb-1">Categoría</label><input type="text" className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#ccff00]" value={currentProduct.category || ''} onChange={e=>setCurrentProduct({...currentProduct, category: e.target.value})} /></div>
-                             <div><label className="block text-xs font-bold text-zinc-400 mb-1">Descripción Corta</label><textarea rows={2} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#ccff00]" value={currentProduct.description || ''} onChange={e=>setCurrentProduct({...currentProduct, description: e.target.value})} /></div>
-                             <div><label className="block text-xs font-bold text-zinc-400 mb-1">Descripción Detallada</label><textarea rows={4} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#ccff00]" value={currentProduct.longDescription || ''} onChange={e=>setCurrentProduct({...currentProduct, longDescription: e.target.value})} /></div>
-                             <div><label className="block text-xs font-bold text-zinc-400 mb-1">URL Imagen</label><input type="text" className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#ccff00]" value={currentProduct.image || ''} onChange={e=>setCurrentProduct({...currentProduct, image: e.target.value})} /></div>
+
+                            {/* Resto de campos */}
+                            <div>
+                                <label className="block text-xs font-bold text-zinc-400 mb-1">Nombre del Producto</label>
+                                <input type="text" placeholder="Nombre" className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#ccff00]" value={currentProduct.name || ''} onChange={e=>setCurrentProduct({...currentProduct, name: e.target.value})} />
+                            </div>
+                            
+                            <div className="flex gap-4">
+                                <div className="w-1/2">
+                                    <label className="block text-xs font-bold text-zinc-400 mb-1">Precio</label>
+                                    <input type="number" placeholder="Precio" className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#ccff00]" value={currentProduct.price || 0} onChange={e=>setCurrentProduct({...currentProduct, price: Number(e.target.value)})} />
+                                </div>
+                                <div className="w-1/2">
+                                    <label className="block text-xs font-bold text-zinc-400 mb-1">Stock</label>
+                                    <input type="number" placeholder="Stock" className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#ccff00]" value={currentProduct.stock || 0} onChange={e=>setCurrentProduct({...currentProduct, stock: Number(e.target.value)})} />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-zinc-400 mb-1">Marca</label>
+                                <select 
+                                    value={currentProduct.brand} 
+                                    onChange={e=>setCurrentProduct({...currentProduct, brand: e.target.value as any})}
+                                    className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#ccff00]"
+                                >
+                                    <option value="informa">In Forma</option>
+                                    <option value="phisis">Phisis</option>
+                                    <option value="iqual">Iqual</option>
+                                    <option value="biofarma">BioFarma</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-zinc-400 mb-1">Categoría</label>
+                                <input type="text" placeholder="Categoría" className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#ccff00]" value={currentProduct.category || ''} onChange={e=>setCurrentProduct({...currentProduct, category: e.target.value})} />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-zinc-400 mb-1">Descripción Corta</label>
+                                <textarea rows={2} placeholder="Descripción" className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#ccff00]" value={currentProduct.description || ''} onChange={e=>setCurrentProduct({...currentProduct, description: e.target.value})} />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-xs font-bold text-zinc-400 mb-1">Descripción Detallada (Modal)</label>
+                                <textarea rows={4} placeholder="Descripción completa que aparece en el detalle..." className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#ccff00]" value={currentProduct.longDescription || ''} onChange={e=>setCurrentProduct({...currentProduct, longDescription: e.target.value})} />
+                            </div>
                         </div>
+
                         <div className="flex justify-end gap-2 mt-8">
                             <button onClick={()=>setIsEditing(false)} className="text-zinc-400 px-4 py-2 hover:bg-white/5 rounded-xl">Cancelar</button>
                             <button onClick={handleSaveProduct} className="bg-[#ccff00] text-black px-6 py-2 rounded-xl font-bold shadow-lg">Guardar</button>
