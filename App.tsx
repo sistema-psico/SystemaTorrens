@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import ProductCard from './components/ProductCard';
@@ -20,7 +20,6 @@ import { useFirestore } from './hooks/useFirestore';
 
 function App() {
   // --- ESTADO PERSISTENTE (Conectado a Firebase Firestore) ---
-  // Si la base de datos está vacía, estos hooks subirán automáticamente los datos 'initial...'
   const [products, setProducts] = useFirestore<Product[]>('products', initialProducts);
   const [contactInfo, setContactInfo] = useFirestore<ContactInfo>('contactInfo', initialContactInfo);
   const [paymentConfig, setPaymentConfig] = useFirestore<PaymentConfig>('paymentConfig', initialPaymentConfig);
@@ -44,6 +43,9 @@ function App() {
   // --- ESTADO PARA NOTIFICACIONES (TOAST) ---
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  
+  // Ref para evitar el bucle infinito de notificaciones
+  const lastNotifiedMsgId = useRef<string | null>(null);
 
   // --- EFECTO: DETECTAR NUEVOS MENSAJES / ACTUALIZACIONES ---
   useEffect(() => {
@@ -56,20 +58,23 @@ function App() {
               // Verificamos el último mensaje recibido
               const lastMsg = updatedUser.messages[updatedUser.messages.length - 1];
               
-              // Si el último mensaje es del admin, no ha sido leído y NO estamos mostrando ya una notificación
-              if (lastMsg && lastMsg.sender === 'admin' && !lastMsg.read && !showToast) {
+              // Si el último mensaje es del admin, no ha sido leído Y NO ES EL MISMO QUE YA NOTIFICAMOS
+              if (lastMsg && lastMsg.sender === 'admin' && !lastMsg.read && lastMsg.id !== lastNotifiedMsgId.current) {
                   // Personalizamos el mensaje según el contenido
                   const isOrderUpdate = lastMsg.content.includes('pedido');
                   setToastMessage(isOrderUpdate ? "📦 Actualización de Pedido" : "💬 Nuevo mensaje del Administrador");
                   
                   setShowToast(true);
+                  // Guardamos el ID para no volver a notificar este mismo mensaje
+                  lastNotifiedMsgId.current = lastMsg.id;
+
                   // Ocultar automáticamente después de 4 segundos
                   const timer = setTimeout(() => setShowToast(false), 4000);
                   return () => clearTimeout(timer);
               }
           }
       }
-  }, [resellers, loggedReseller, currentView, showToast]);
+  }, [resellers, loggedReseller, currentView]); // Eliminamos showToast de las dependencias para evitar bucles
 
   // --- LÓGICA DE NEGOCIO ---
 
