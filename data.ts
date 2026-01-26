@@ -1,16 +1,23 @@
 import { Product, ContactInfo, Banner, Reseller, Client, SiteContent, PaymentConfig, SocialReview, PeptoneFormula } from './types';
 
 export const linfarCatalog: PeptoneFormula[] = [
-    // ... (Mantén tu catálogo de peptonas aquí, lo omito para brevedad pero NO lo borres)
     { 
         code: 'APG', 
         name: 'Arteriotrófica Potenciada', 
         ingredients: 'Páncreas, Arterias, Nicotinamida, B6, C', 
         recommendations: 'Arteriosclerosis, metabolismo lipídico, potencia.', 
-        description: 'Actúa sobre la pared de los vasos y sobre el metabolismo en general...',
+        description: 'Actúa sobre la pared de los vasos y sobre el metabolismo en general. Produce espasmolisis arterial, recuperación de la permeabilidad selectiva del endotelio vascular, normalización y regulación del metabolismo lipídico. Geriátrico por excelencia. Arteriosclerosis en todas sus formas. Poderoso coadyuvante en impotencia.',
         presentations: ['Ampollas', 'Comprimidos', 'Gotas'] 
     },
-    // ... resto de peptonas ...
+    { 
+        code: 'ART', 
+        name: 'Articular', 
+        ingredients: 'Colágeno, Cartílago', 
+        recommendations: 'Artrosis, Artritis, Fracturas, Lupus.', 
+        description: 'Revitaliza los elementos constitutivos de las articulaciones y el tejido colágeno en general. Indicado en Colagenosis, Artritis reumatoidea, Poliartritis, Lupus eritematoso, Esclerodermia, Artrosis, Artrogénesis imperfecta, Fracturas y Luxaciones.',
+        presentations: ['Ampollas', 'Comprimidos', 'Gotas'] 
+    },
+    // ... Puedes agregar el resto del catálogo aquí si lo necesitas completo ...
 ];
 
 export const initialSiteContent: SiteContent = {
@@ -38,12 +45,10 @@ export const initialSiteContent: SiteContent = {
   logoBiofarma: "",
   bioHeroBg: "",
 
-  // --- NUEVA CONFIGURACIÓN INICIAL ---
-  resellerDiscount: 30, // 30% por defecto
-  globalOfferDiscount: 0 // 0% por defecto (apagado)
+  resellerDiscount: 30,
+  globalOfferDiscount: 0
 };
 
-// ... El resto del archivo data.ts se mantiene igual (ContactInfo, PaymentConfig, Products, etc.)
 export const initialContactInfo: ContactInfo = {
   email: "contacto@informa-phisis.com",
   phone: "+54 9 11 1234 5678",
@@ -64,12 +69,19 @@ export const initialPaymentConfig: PaymentConfig = {
 };
 
 export const initialSocialReviews: SocialReview[] = [
-    { id: 'rev-1', imageUrl: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=300&auto=format&fit=crop', brand: 'informa' },
-    { id: 'rev-2', imageUrl: 'https://images.unsplash.com/photo-1611162616475-46b635cb6868?q=80&w=300&auto=format&fit=crop', brand: 'phisis' },
+    {
+        id: 'rev-1',
+        imageUrl: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=300&auto=format&fit=crop', 
+        brand: 'informa'
+    },
+    {
+        id: 'rev-2',
+        imageUrl: 'https://images.unsplash.com/photo-1611162616475-46b635cb6868?q=80&w=300&auto=format&fit=crop', 
+        brand: 'phisis'
+    }
 ];
 
 export const initialProducts: Product[] = [
-  // ... Tus productos actuales ...
   {
     id: 'IF-001',
     name: 'Max Training',
@@ -77,11 +89,13 @@ export const initialProducts: Product[] = [
     category: 'Alto Rendimiento',
     price: 18500,
     description: 'Bebida completa hidratante y energizante.',
+    longDescription: 'Diseñado para atletas de alto rendimiento, Max Training combina electrolitos esenciales con una matriz de carbohidratos de liberación sostenida.',
     image: '/images/products/max-training.jpg',
+    features: ['Hidratación', 'Energía', 'Recuperación'],
     stock: 50,
     active: true
   },
-  // ... etc ...
+  // ... Resto de productos iniciales ...
 ];
 
 export const initialBanners: Banner[] = [
@@ -96,7 +110,7 @@ export const initialBanners: Banner[] = [
         relatedProducts: [
             { productId: 'IF-001', quantity: 1, discountPercentage: 15 },
         ]
-    },
+    }
 ];
 
 export const initialResellers: Reseller[] = [
