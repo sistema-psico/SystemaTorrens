@@ -12,7 +12,7 @@ import Login from './components/Login';
 import SocialProof from './components/SocialProof';
 import InstallAppButton from './components/InstallAppButton';
 import { initialProducts, initialContactInfo, initialBanners, initialResellers, initialAdminClients, initialSiteContent, initialPaymentConfig, initialSocialReviews } from './data';
-import { Product, CartItem, Category, ContactInfo, Banner, Reseller, Client, SiteContent, User, PaymentConfig, SocialReview, Brand, PeptoneFormula, ResellerOrder } from './types';
+import { Product, CartItem, Category, ContactInfo, Banner, Reseller, Client, SiteContent, User, PaymentConfig, SocialReview, Brand, PeptoneFormula, ResellerOrder, Sale } from './types';
 import { Sparkles, SlidersHorizontal, Lock, MapPin, Phone, Mail, Instagram, Bell } from 'lucide-react';
 
 import { useFirestore } from './hooks/useFirestore';
@@ -26,9 +26,10 @@ function App() {
   const [adminClients, setAdminClients] = useFirestore<Client[]>('adminClients', initialAdminClients);
   const [siteContent, setSiteContent] = useFirestore<SiteContent>('siteContent', initialSiteContent);
   const [socialReviews, setSocialReviews] = useFirestore<SocialReview[]>('socialReviews', initialSocialReviews);
-  
-  // NUEVO: Estado para órdenes directas de clientes web
   const [directOrders, setDirectOrders] = useFirestore<ResellerOrder[]>('directOrders', []);
+  
+  // NUEVO: Estado para historial de ventas manuales del admin
+  const [adminSales, setAdminSales] = useFirestore<Sale[]>('adminSales', []);
   
   const [currentView, setCurrentView] = useState<'shop' | 'admin' | 'reseller' | 'login'>('shop');
   const [activeBrand, setActiveBrand] = useState<Brand>('informa');
@@ -135,7 +136,6 @@ function App() {
       setSelectedProduct(productPayload);
   };
 
-  // NUEVO: Handler para guardar órdenes directas desde el carrito
   const handleDirectOrder = (order: ResellerOrder) => {
       setDirectOrders([order, ...directOrders]);
       setCart([]);
@@ -197,8 +197,10 @@ function App() {
             onClose={() => setCurrentView('shop')}
             siteContent={siteContent}
             setSiteContent={setSiteContent}
-            directOrders={directOrders} // Pasamos las órdenes directas
+            directOrders={directOrders}
             setDirectOrders={setDirectOrders}
+            adminSales={adminSales} // Pasamos la nueva prop
+            setAdminSales={setAdminSales}
         />
       );
   }
@@ -345,7 +347,6 @@ function App() {
         <footer className={`${
             isSports ? 'bg-black/80 border-t border-white/5' : isIqual ? 'bg-slate-900/80 border-t border-white/5' : isBio ? 'bg-white border-t border-blue-100' : 'bg-stone-100/80 border-t border-stone-200'
         } backdrop-blur-lg pt-16 pb-8`}>
-            {/* Footer content remains same */}
             <div className="max-w-7xl mx-auto px-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
                     <div className="text-center md:text-left">
@@ -353,28 +354,53 @@ function App() {
                             {isSports ? 'IN FORMA' : isIqual ? 'IQUAL' : isBio ? 'BIOFARMA' : 'PHISIS'}
                         </h3>
                         <p className={`text-sm ${isSports || isIqual ? 'text-gray-400' : 'text-stone-500'}`}>
-                            {isSports ? 'Llevando tu rendimiento al máximo nivel.' : isIqual ? 'Descubrí tu esencia.' : isBio ? 'Ciencia y naturaleza.' : 'Cuidando tu belleza.'}
+                            {isSports 
+                                ? 'Llevando tu rendimiento al máximo nivel con suplementación deportiva de vanguardia.' 
+                                : isIqual 
+                                    ? 'Descubrí tu esencia con nuestras fragancias exclusivas y productos de cuidado personal.'
+                                    : isBio
+                                        ? 'Ciencia y naturaleza para una salud integral. Soluciones de regeneración celular.'
+                                        : 'Cuidando tu belleza interior y exterior con lo mejor de la naturaleza y la ciencia.'
+                            }
                         </p>
                     </div>
+
                     <div className="text-center md:text-left">
                         <h3 className={`text-lg font-bold mb-4 ${isSports ? 'text-[#ccff00]' : isIqual ? 'text-indigo-400' : isBio ? 'text-blue-700' : 'text-emerald-700'}`}>
                             Contacto
                         </h3>
                         <div className={`space-y-3 text-sm ${isSports || isIqual ? 'text-gray-300' : 'text-stone-600'}`}>
-                            <div className="flex items-center justify-center md:justify-start gap-2"><MapPin className="w-4 h-4" /> {contactInfo.address}</div>
-                            <div className="flex items-center justify-center md:justify-start gap-2"><Phone className="w-4 h-4" /> {contactInfo.phone}</div>
-                            <div className="flex items-center justify-center md:justify-start gap-2"><Mail className="w-4 h-4" /> {contactInfo.email}</div>
-                            <div className="flex items-center justify-center md:justify-start gap-2"><Instagram className="w-4 h-4" /> {contactInfo.instagram}</div>
+                            <div className="flex items-center justify-center md:justify-start gap-2">
+                                <MapPin className="w-4 h-4" /> {contactInfo.address}
+                            </div>
+                            <div className="flex items-center justify-center md:justify-start gap-2">
+                                <Phone className="w-4 h-4" /> {contactInfo.phone}
+                            </div>
+                            <div className="flex items-center justify-center md:justify-start gap-2">
+                                <Mail className="w-4 h-4" /> {contactInfo.email}
+                            </div>
+                            <div className="flex items-center justify-center md:justify-start gap-2">
+                                <Instagram className="w-4 h-4" /> {contactInfo.instagram}
+                            </div>
                         </div>
                     </div>
+
                     <div className="text-center md:text-right space-y-2">
-                        <button onClick={() => setCurrentView('login')} className={`text-sm font-medium flex items-center justify-center md:justify-end gap-2 ml-auto hover:underline ${isSports || isIqual ? 'text-gray-600 hover:text-white' : 'text-stone-400 hover:text-emerald-800'}`}>
+                        <button 
+                            onClick={() => setCurrentView('login')}
+                            className={`text-sm font-medium flex items-center justify-center md:justify-end gap-2 ml-auto hover:underline ${
+                                isSports || isIqual ? 'text-gray-600 hover:text-white' : 'text-stone-400 hover:text-emerald-800'
+                            }`}
+                        >
                             <Lock className="w-4 h-4" /> Acceso Socios
                         </button>
                     </div>
                 </div>
+
                 <div className={`text-center pt-8 border-t ${isSports || isIqual ? 'border-gray-800' : 'border-stone-200'}`}>
-                    <p className={`text-xs ${isSports || isIqual ? 'text-gray-600' : 'text-stone-400'}`}>© 2024 In Forma, Phisis & Iqual.</p>
+                    <p className={`text-xs ${isSports || isIqual ? 'text-gray-600' : 'text-stone-400'}`}>
+                        © 2024 In Forma, Phisis & Iqual. Todos los derechos reservados.
+                    </p>
                 </div>
             </div>
         </footer>
@@ -391,11 +417,24 @@ function App() {
             currentUser={currentUser}
             onLoginRequest={() => { setIsCartOpen(false); setCurrentView('login'); }}
             onClientLogin={(user) => setCurrentUser(user)}
-            onOrderCreate={handleDirectOrder} // Pasamos la nueva función
+            onOrderCreate={handleDirectOrder} 
         />
 
-        {selectedProduct && <ProductDetail product={selectedProduct} onClose={() => setSelectedProduct(null)} onAddToCart={(p, qty) => { addToCart(p, qty); setIsCartOpen(true); }} />}
-        <RecommendationQuiz isOpen={isQuizOpen} onClose={() => setIsQuizOpen(false)} products={products} onAddToCart={(p) => { addToCart(p, 1); setIsCartOpen(true); }} />
+        {selectedProduct && (
+            <ProductDetail 
+                product={selectedProduct} 
+                onClose={() => setSelectedProduct(null)}
+                onAddToCart={(p, qty) => { addToCart(p, qty); setIsCartOpen(true); }}
+            />
+        )}
+
+        <RecommendationQuiz 
+            isOpen={isQuizOpen} 
+            onClose={() => setIsQuizOpen(false)}
+            products={products}
+            onAddToCart={(p) => { addToCart(p, 1); setIsCartOpen(true); }}
+        />
+
       </div>
     </div>
   );
