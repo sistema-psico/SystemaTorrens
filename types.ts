@@ -10,7 +10,7 @@ export interface User {
 export interface SocialReview {
     id: string;
     imageUrl: string;
-    brand: Brand | 'both'; // A qué marca pertenece el comentario
+    brand: Brand | 'both';
 }
 
 export interface PaymentMethodConfig {
@@ -31,8 +31,8 @@ export interface Product {
   id: string;
   name: string;
   description: string;
-  longDescription?: string; // New field for detailed view
-  usageMode?: string; // New field for detailed view
+  longDescription?: string;
+  usageMode?: string;
   price: number;
   brand: Brand;
   category: string;
@@ -42,20 +42,19 @@ export interface Product {
   active: boolean;
 }
 
-// Interface specific for the Peptone Catalog (Vademécum)
 export interface PeptoneFormula {
-    code: string; // e.g., APG, ART
-    name: string; // e.g., Arteriotrófica
+    code: string;
+    name: string;
     ingredients: string;
     recommendations: string;
-    description: string; // Full description from Vademecum
+    description: string;
     presentations: ('Ampollas' | 'Comprimidos' | 'Gotas')[];
 }
 
 export interface CartItem extends Product {
   quantity: number;
   discount?: number;
-  selectedPresentation?: string; // To store if user picked Ampollas/Comprimidos
+  selectedPresentation?: string;
 }
 
 export interface SiteContent {
@@ -63,25 +62,25 @@ export interface SiteContent {
   sportsHeroTitle2: string;
   sportsHeroDescription: string;
   logoInforma?: string;
-  sportsHeroBg?: string; // New
+  sportsHeroBg?: string;
   
   beautyHeroTitle1: string;
   beautyHeroTitle2: string;
   beautyHeroDescription: string;
   logoPhisis?: string;
-  beautyHeroBg?: string; // New
+  beautyHeroBg?: string;
   
   fragranceHeroTitle1: string;
   fragranceHeroTitle2: string;
   fragranceHeroDescription: string;
   logoIqual?: string;
-  fragranceHeroBg?: string; // New
+  fragranceHeroBg?: string;
 
   bioHeroTitle1: string;
   bioHeroTitle2: string;
   bioHeroDescription: string;
   logoBiofarma?: string;
-  bioHeroBg?: string; // New
+  bioHeroBg?: string;
 }
 
 export interface ContactInfo {
@@ -105,21 +104,21 @@ export interface Banner {
   brand: Brand;
   active: boolean;
   discountPercentage?: number;
-  relatedProducts: PromotionItem[]; // Si está vacío, es solo informativo
+  relatedProducts: PromotionItem[];
 }
 
 export type Category = 'Todos' | 'Alto Rendimiento' | 'Adelgazantes' | 'Energizantes' | 'Nutricosmética' | 'Cuidado Piel' | 'Fragancias' | 'Cuidado Corporal' | 'Facial' | 'Salud Integral' | 'Peptonas' | 'Revitalización' | 'Genética';
 
-// --- RESELLER TYPES ---
+// --- RESELLER & ORDER TYPES ---
 
 export interface Client {
   id: string;
   name: string;
   phone: string;
-  email?: string; // Nuevo campo agregado para contacto
+  email?: string;
   address: string;
   paymentMethod: 'Efectivo' | 'Transferencia' | 'Tarjeta';
-  currentAccountBalance: number; // Saldo deudor o a favor
+  currentAccountBalance: number;
   lastOrderDate?: string;
 }
 
@@ -131,15 +130,26 @@ export interface Message {
   read: boolean;
 }
 
+// Nueva interfaz para datos de envío
+export interface ShippingInfo {
+    address: string;
+    phone: string;
+    notes?: string;
+    email?: string;
+    paymentMethodChosen: string;
+}
+
 export interface ResellerOrder {
   id: string;
-  clientId: string; // ID del propio revendedor si es auto-compra o referencia
+  clientId: string; 
   clientName: string;
   items: CartItem[];
   total: number;
   status: 'Pendiente' | 'En Camino' | 'Entregado' | 'Cancelado';
   date: string;
-  deliveryTimeEstimate?: string; // e.g. "24-48hs"
+  deliveryTimeEstimate?: string;
+  shippingInfo?: ShippingInfo; // Nuevo campo opcional
+  type?: 'reseller' | 'direct'; // Para distinguir origen
 }
 
 export interface Sale {
@@ -156,13 +166,13 @@ export interface Reseller {
   id: string;
   name: string;
   email: string;
-  password: string; // En una app real esto estaría hasheado
+  password: string;
   region: string;
   active: boolean;
-  stock: Product[]; // Stock propio del revendedor
+  stock: Product[];
   clients: Client[];
-  orders: ResellerOrder[]; // Pedidos de reposición al Admin
-  sales: Sale[]; // Ventas realizadas a sus clientes finales
+  orders: ResellerOrder[];
+  sales: Sale[];
   messages: Message[];
-  points: number; // Sistema de gamificación
+  points: number;
 }
