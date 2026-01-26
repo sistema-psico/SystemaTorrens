@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { X, Trash2, ShoppingBag, Check, ArrowRight, CreditCard, Wallet, Banknote, ShieldCheck, Copy, CheckCircle2, MapPin, Phone, FileText, User as UserIcon } from 'lucide-react';
+import { X, Trash2, ShoppingBag, Check, ArrowRight, CreditCard, Wallet, Banknote, ShieldCheck, Copy, CheckCircle2, MapPin, Phone, FileText } from 'lucide-react';
 import { CartItem, Brand, ContactInfo, User, PaymentConfig } from '../types';
-import Toast, { ToastType } from './Toast'; // Importamos el Toast
+import Toast, { ToastType } from './Toast';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { auth } from '../lib/firebase';
 
 interface CartSidebarProps {
   isOpen: boolean;
@@ -13,7 +15,8 @@ interface CartSidebarProps {
   contactInfo: ContactInfo;
   paymentConfig: PaymentConfig;
   currentUser: User | null;
-  onLoginRequest: () => void;
+  onLoginRequest: () => void; // Mantenemos esto por si un revendedor quiere entrar desde acá
+  onClientLogin: (user: User) => void; // NUEVA PROP: Para guardar el usuario de Google
 }
 
 type CheckoutStep = 'cart' | 'login' | 'payment';
@@ -30,19 +33,21 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
   contactInfo,
   paymentConfig,
   currentUser,
-  onLoginRequest
+  onLoginRequest,
+  onClientLogin
 }) => {
   const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>('cart');
   const [paymentType, setPaymentType] = useState<PaymentType>('full');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>('');
   const [copiedAlias, setCopiedAlias] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   // Estados locales para datos de envío
   const [customerAddress, setCustomerAddress] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [orderNotes, setOrderNotes] = useState('');
 
-  // --- ESTADO DEL TOAST ---
+  // Toast
   const [toast, setToast] = useState<{ show: boolean; message: string; type: ToastType } | null>(null);
 
   const showToast = (message: string, type: ToastType = 'error') => {
@@ -71,6 +76,38 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
 
   const payNowAmount = paymentType === 'full' ? total : total * 0.5;
   const payLaterAmount = total - payNowAmount;
+
+  // --- LOGIN CON GOOGLE ---
+  const handleGoogleLogin = async () => {
+      setIsAuthenticating(true);
+      try {
+          const provider = new GoogleAuthProvider();
+          const result = await signInWithPopup(auth, provider);
+          const user = result.user;
+
+          // Mapeamos el usuario de Firebase a nuestro tipo User
+          const clientUser: User = {
+              id: user.uid,
+              name: user.displayName || 'Cliente',
+              email: user.email || '',
+              avatar: user.photoURL || 'https://via.placeholder.com/150'
+          };
+
+          // Guardamos en App.tsx
+          onClientLogin(clientUser);
+          
+          showToast(`¡Hola ${clientUser.name}!`, 'success');
+          
+          // Avanzamos automáticamente al pago
+          setCheckoutStep('payment');
+
+      } catch (error: any) {
+          console.error("Error Google Login:", error);
+          showToast("No se pudo iniciar sesión con Google", 'error');
+      } finally {
+          setIsAuthenticating(false);
+      }
+  };
 
   const handleInitialCheckoutClick = () => {
       if (currentUser) {
@@ -166,7 +203,6 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
 
   return (
     <>
-      {/* Renderizamos el Toast si está activo */}
       {toast?.show && (
           <Toast 
               message={toast.message} 
@@ -191,7 +227,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
               <ShoppingBag className={`w-5 h-5 ${isDark ? 'text-white' : isBio ? 'text-blue-900' : 'text-emerald-800'}`} />
               <h2 className={`text-lg font-bold ${textMain}`}>
                 {checkoutStep === 'cart' && "Tu Carrito"}
-                {checkoutStep === 'login' && "Iniciar Sesión"}
+                {checkoutStep === 'login' && "Identificación"}
                 {checkoutStep === 'payment' && "Finalizar Pedido"}
               </h2>
             </div>
@@ -278,7 +314,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
             </>
         )}
 
-        {/* --- STEP 2: LOGIN REQUIRED --- */}
+        {/* --- STEP 2: GOOGLE LOGIN --- */}
         {checkoutStep === 'login' && (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-fade-in">
                  <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 ${
@@ -287,22 +323,37 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
                      <ShieldCheck className={`w-10 h-10 ${isSports ? 'text-[#ccff00]' : isIqual ? 'text-indigo-400' : isBio ? 'text-blue-600' : 'text-emerald-600'}`} />
                  </div>
                  <h3 className={`text-2xl font-bold mb-2 ${textMain}`}>
-                     Inicia Sesión
+                     Identifícate
                  </h3>
                  <p className={`mb-8 max-w-xs ${textMuted}`}>
-                     Para finalizar tu compra de forma segura, necesitas ingresar a tu cuenta o crear una rápida si eres nuevo.
+                     Usa tu cuenta de Google para autocompletar tus datos y finalizar la compra rápido y seguro.
                  </p>
 
+                 {/* BOTÓN GOOGLE */}
+                 <button 
+                    onClick={handleGoogleLogin}
+                    disabled={isAuthenticating}
+                    className="w-full max-w-sm py-3 px-4 rounded-xl flex items-center justify-center gap-3 font-bold bg-white text-gray-800 shadow-lg hover:bg-gray-100 transition-all border border-gray-200"
+                 >
+                     {isAuthenticating ? 'Conectando...' : (
+                         <>
+                            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" className="w-5 h-5" />
+                            Ingresar con Google
+                         </>
+                     )}
+                 </button>
+
+                 {/* Opción secundaria para Revendedores/Admin */}
                  <button 
                     onClick={onLoginRequest}
-                    className={`w-full max-w-sm py-3 px-4 rounded-xl flex items-center justify-center gap-3 font-bold transition-all transform hover:scale-105 shadow-lg ${accentBg} ${accentTextBtn}`}
+                    className={`mt-6 text-xs hover:underline ${textMuted}`}
                  >
-                     <UserIcon className="w-5 h-5" /> INGRESAR / REGISTRARSE
+                     ¿Eres Revendedor o Administrador? Ingresa aquí
                  </button>
                  
                  <button 
                     onClick={() => setCheckoutStep('cart')}
-                    className={`mt-6 text-sm hover:underline ${textMuted}`}
+                    className={`mt-4 text-sm font-medium ${isSports ? 'text-[#ccff00]' : 'text-blue-600'}`}
                  >
                      Volver al carrito
                  </button>
