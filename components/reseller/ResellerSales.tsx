@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Reseller, CartItem, Product, Sale } from '../../types';
-import { Plus, Trash2, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Reseller, CartItem, Product, Sale, Client } from '../../types';
+import { Plus, Trash2, X, User, Phone, Mail, CreditCard } from 'lucide-react';
 
 interface ResellerSalesProps {
     currentUser: Reseller;
@@ -10,9 +10,27 @@ interface ResellerSalesProps {
 const ResellerSales: React.FC<ResellerSalesProps> = ({ currentUser, onUpdateReseller }) => {
     const [isMakingSale, setIsMakingSale] = useState(false);
     const [saleCart, setSaleCart] = useState<CartItem[]>([]);
-    const [selectedClientForSale, setSelectedClientForSale] = useState('');
+    
+    // Estados para la configuración de la venta
+    const [selectedClientId, setSelectedClientId] = useState('');
+    const [selectedClientData, setSelectedClientData] = useState<Client | null>(null);
+    const [salePaymentMethod, setSalePaymentMethod] = useState<string>('Efectivo');
 
-    // --- SALES LOGIC ---
+    // Efecto para precargar datos cuando se selecciona un cliente
+    useEffect(() => {
+        if (selectedClientId) {
+            const client = currentUser.clients.find(c => c.id === selectedClientId);
+            if (client) {
+                setSelectedClientData(client);
+                setSalePaymentMethod(client.paymentMethod); // Precargar su método preferido
+            }
+        } else {
+            setSelectedClientData(null);
+            setSalePaymentMethod('Efectivo');
+        }
+    }, [selectedClientId, currentUser.clients]);
+
+    // --- LOGICA DE CARRITO ---
     const addToSaleCart = (product: Product) => {
         if (product.stock <= 0) return;
         setSaleCart(prev => {
@@ -30,23 +48,22 @@ const ResellerSales: React.FC<ResellerSalesProps> = ({ currentUser, onUpdateRese
     };
 
     const confirmSale = () => {
-        if (!selectedClientForSale || saleCart.length === 0) return;
+        if (!selectedClientData || saleCart.length === 0) return;
         
         const totalAmount = saleCart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-        const client = currentUser.clients.find(c => c.id === selectedClientForSale);
 
-        // 1. Create Sale Record
+        // 1. Crear Registro de Venta con los datos confirmados
         const newSale: Sale = {
             id: `V-${Date.now()}`,
-            clientId: selectedClientForSale,
-            clientName: client?.name || 'Cliente',
+            clientId: selectedClientData.id,
+            clientName: selectedClientData.name,
             date: new Date().toLocaleDateString(),
             items: [...saleCart],
             total: totalAmount,
-            paymentMethod: client?.paymentMethod || 'Efectivo'
+            paymentMethod: salePaymentMethod // Usamos el método seleccionado para ESTA venta
         };
 
-        // 2. Update Stock (Reduce local stock)
+        // 2. Actualizar Stock (Restar del inventario local)
         const updatedStock = currentUser.stock.map(prod => {
             const cartItem = saleCart.find(c => c.id === prod.id);
             if (cartItem) {
@@ -55,10 +72,14 @@ const ResellerSales: React.FC<ResellerSalesProps> = ({ currentUser, onUpdateRese
             return prod;
         });
 
-        // 3. Update Points (Example: 1 point per $1000)
+        // 3. Actualizar Puntos (Ejemplo: 1 punto cada $1000)
         const newPoints = (currentUser.points || 0) + Math.floor(totalAmount / 1000);
 
-        // 4. Update Global State
+        // 4. Actualizar Saldo del Cliente (Opcional, si fuera Cta Cte)
+        // Por simplicidad, asumimos que la venta afecta el saldo si no es contado, 
+        // pero aquí solo registramos la venta. Podrías agregar lógica de saldo aquí.
+
+        // 5. Guardar todo
         onUpdateReseller({
             ...currentUser,
             sales: [newSale, ...currentUser.sales],
@@ -66,10 +87,11 @@ const ResellerSales: React.FC<ResellerSalesProps> = ({ currentUser, onUpdateRese
             points: newPoints
         });
 
-        // Reset
+        // Resetear formulario
         setIsMakingSale(false);
         setSaleCart([]);
-        setSelectedClientForSale('');
+        setSelectedClientId('');
+        setSelectedClientData(null);
     };
 
     return (
@@ -81,7 +103,7 @@ const ResellerSales: React.FC<ResellerSalesProps> = ({ currentUser, onUpdateRese
                 </button>
             </div>
             
-            {/* Sales History Table */}
+            {/* Tabla Historial (Sin cambios visuales mayores) */}
             <div className="bg-zinc-900/40 backdrop-blur-md rounded-2xl border border-white/5 overflow-hidden shadow-xl">
                 <table className="w-full text-left">
                     <thead className="bg-black/40 text-zinc-400 text-sm">
@@ -116,89 +138,147 @@ const ResellerSales: React.FC<ResellerSalesProps> = ({ currentUser, onUpdateRese
                 </table>
             </div>
 
-            {/* NEW SALE MODAL */}
+            {/* MODAL NUEVA VENTA */}
             {isMakingSale && (
                 <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[60] flex items-center justify-center p-4">
-                    <div className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-4xl h-[85vh] flex overflow-hidden animate-scale-in shadow-2xl">
-                        {/* Left: Product Selection */}
-                        <div className="w-2/3 border-r border-white/10 flex flex-col">
+                    <div className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-5xl h-[85vh] flex overflow-hidden animate-scale-in shadow-2xl">
+                        
+                        {/* IZQUIERDA: Selección de Productos */}
+                        <div className="w-3/5 border-r border-white/10 flex flex-col">
                             <div className="p-4 border-b border-white/10 bg-black/20">
-                                <h3 className="text-white font-bold mb-2">Seleccionar Productos del Stock</h3>
-                                <input type="text" placeholder="Buscar producto..." className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white outline-none focus:border-[#ccff00]" />
+                                <h3 className="text-white font-bold mb-2">1. Seleccionar Productos</h3>
+                                <input type="text" placeholder="Buscar en mi stock..." className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white outline-none focus:border-[#ccff00]" />
                             </div>
-                            <div className="flex-1 overflow-y-auto p-4 grid grid-cols-2 gap-4">
+                            <div className="flex-1 overflow-y-auto p-4 grid grid-cols-2 gap-3">
                                 {currentUser.stock.map(product => (
                                     <button 
                                         key={product.id} 
                                         onClick={() => addToSaleCart(product)}
                                         disabled={product.stock === 0}
-                                        className={`text-left p-3 rounded-xl border transition-all flex gap-3 group ${
+                                        className={`text-left p-3 rounded-xl border transition-all flex gap-3 group relative overflow-hidden ${
                                             product.stock === 0 
-                                            ? 'opacity-50 border-white/5 bg-black/20' 
+                                            ? 'opacity-50 border-white/5 bg-black/20 cursor-not-allowed' 
                                             : 'border-white/10 bg-black/40 hover:border-[#ccff00]/50 hover:bg-white/5'
                                         }`}
                                     >
                                         <img src={product.image} className="w-12 h-12 rounded bg-zinc-800 object-cover" alt={product.name} />
-                                        <div>
-                                            <p className="text-white font-bold text-sm line-clamp-1 group-hover:text-[#ccff00] transition-colors">{product.name}</p>
-                                            <p className="text-zinc-400 text-xs font-mono">${product.price.toLocaleString()}</p>
-                                            <p className={`text-[10px] ${product.stock < 5 ? 'text-red-400' : 'text-zinc-500'}`}>Stock: {product.stock}</p>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-white font-bold text-sm truncate group-hover:text-[#ccff00] transition-colors">{product.name}</p>
+                                            <div className="flex justify-between items-center mt-1">
+                                                <span className="text-zinc-400 text-xs font-mono">${product.price.toLocaleString()}</span>
+                                                <span className={`text-[10px] px-1.5 py-0.5 rounded ${product.stock < 5 ? 'bg-red-500/20 text-red-400' : 'bg-zinc-700 text-zinc-300'}`}>
+                                                    Stock: {product.stock}
+                                                </span>
+                                            </div>
                                         </div>
                                     </button>
                                 ))}
                             </div>
                         </div>
 
-                        {/* Right: Cart & Checkout */}
-                        <div className="w-1/3 flex flex-col bg-black/40">
-                            <div className="p-4 border-b border-white/10">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h3 className="text-white font-bold">Nueva Venta</h3>
-                                    <button onClick={() => setIsMakingSale(false)} className="text-zinc-500 hover:text-white"><X className="w-5 h-5" /></button>
-                                </div>
-                                <select 
-                                    value={selectedClientForSale}
-                                    onChange={(e) => setSelectedClientForSale(e.target.value)}
-                                    className="w-full bg-black/50 border border-white/10 p-2 rounded text-white mb-2 outline-none focus:border-[#ccff00]"
-                                >
-                                    <option value="">Seleccionar Cliente</option>
-                                    {currentUser.clients.map(c => (
-                                        <option key={c.id} value={c.id}>{c.name}</option>
-                                    ))}
-                                </select>
+                        {/* DERECHA: Datos de Venta y Checkout */}
+                        <div className="w-2/5 flex flex-col bg-black/40">
+                            <div className="p-4 border-b border-white/10 flex justify-between items-center">
+                                <h3 className="text-white font-bold">2. Detalle de Venta</h3>
+                                <button onClick={() => setIsMakingSale(false)} className="text-zinc-500 hover:text-white"><X className="w-5 h-5" /></button>
                             </div>
                             
-                            <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                                {saleCart.map(item => (
-                                    <div key={item.id} className="flex justify-between items-center text-sm bg-white/5 p-2 rounded border border-white/5">
-                                        <div>
-                                            <p className="text-white font-medium">{item.name}</p>
-                                            <p className="text-zinc-500 text-xs">x{item.quantity} · <span className="text-[#ccff00]">${(item.price * item.quantity).toLocaleString()}</span></p>
+                            <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                                
+                                {/* A. Selección de Cliente */}
+                                <div className="space-y-3">
+                                    <label className="text-xs font-bold text-zinc-500 uppercase ml-1">Cliente</label>
+                                    <select 
+                                        value={selectedClientId}
+                                        onChange={(e) => setSelectedClientId(e.target.value)}
+                                        className="w-full bg-zinc-800 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#ccff00] transition-colors"
+                                    >
+                                        <option value="">-- Seleccionar Cliente --</option>
+                                        {currentUser.clients.map(c => (
+                                            <option key={c.id} value={c.id}>{c.name}</option>
+                                        ))}
+                                    </select>
+
+                                    {/* Información Precargada del Cliente */}
+                                    {selectedClientData && (
+                                        <div className="bg-[#ccff00]/5 border border-[#ccff00]/20 rounded-xl p-3 animate-fade-in space-y-2">
+                                            <div className="flex items-center gap-2 text-sm text-zinc-300">
+                                                <User className="w-3 h-3 text-[#ccff00]" /> 
+                                                <span className="font-bold text-white">{selectedClientData.name}</span>
+                                            </div>
+                                            {selectedClientData.email && (
+                                                <div className="flex items-center gap-2 text-xs text-zinc-400">
+                                                    <Mail className="w-3 h-3" /> {selectedClientData.email}
+                                                </div>
+                                            )}
+                                            {selectedClientData.phone && (
+                                                <div className="flex items-center gap-2 text-xs text-zinc-400">
+                                                    <Phone className="w-3 h-3" /> {selectedClientData.phone}
+                                                </div>
+                                            )}
                                         </div>
-                                        <button onClick={() => removeFromSaleCart(item.id)} className="text-red-400 hover:text-red-300 p-1 hover:bg-white/10 rounded"><Trash2 className="w-4 h-4" /></button>
+                                    )}
+                                </div>
+
+                                {/* B. Carrito de Venta */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-zinc-500 uppercase ml-1">Productos ({saleCart.length})</label>
+                                    <div className="bg-black/20 rounded-xl border border-white/5 overflow-hidden max-h-48 overflow-y-auto">
+                                        {saleCart.length === 0 ? (
+                                            <p className="text-zinc-600 text-xs text-center py-4">Carrito vacío</p>
+                                        ) : (
+                                            saleCart.map(item => (
+                                                <div key={item.id} className="flex justify-between items-center p-2 border-b border-white/5 last:border-0 hover:bg-white/5">
+                                                    <div className="flex-1 min-w-0 mr-2">
+                                                        <p className="text-white text-xs truncate">{item.name}</p>
+                                                        <p className="text-zinc-500 text-[10px]">x{item.quantity}</p>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-[#ccff00] text-xs font-mono">${(item.price * item.quantity).toLocaleString()}</span>
+                                                        <button onClick={() => removeFromSaleCart(item.id)} className="text-red-400 hover:text-red-300"><Trash2 className="w-3 h-3" /></button>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
                                     </div>
-                                ))}
-                                {saleCart.length === 0 && (
-                                    <div className="flex flex-col items-center justify-center h-40 text-zinc-600">
-                                        <p>Carrito vacío</p>
-                                        <p className="text-xs">Selecciona productos de la izquierda</p>
+                                </div>
+
+                                {/* C. Configuración de Pago */}
+                                {selectedClientData && (
+                                    <div className="space-y-2 animate-fade-in">
+                                        <label className="text-xs font-bold text-zinc-500 uppercase ml-1">Forma de Pago</label>
+                                        <div className="relative">
+                                            <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                                            <select 
+                                                value={salePaymentMethod}
+                                                onChange={(e) => setSalePaymentMethod(e.target.value)}
+                                                className="w-full pl-10 pr-4 py-3 bg-zinc-800 border border-white/10 rounded-xl text-white outline-none focus:border-[#ccff00]"
+                                            >
+                                                <option value="Efectivo">Efectivo</option>
+                                                <option value="Transferencia">Transferencia</option>
+                                                <option value="Tarjeta">Tarjeta de Crédito/Débito</option>
+                                                <option value="Cuenta Corriente">Cuenta Corriente</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 )}
+
                             </div>
 
-                            <div className="p-4 border-t border-white/10 bg-black/60">
+                            {/* FOOTER: Total y Confirmar */}
+                            <div className="p-4 border-t border-white/10 bg-zinc-900">
                                 <div className="flex justify-between items-center mb-4">
-                                    <span className="text-zinc-400">Total</span>
-                                    <span className="text-2xl font-bold text-[#ccff00]">${saleCart.reduce((acc, i) => acc + (i.price * i.quantity), 0).toLocaleString()}</span>
+                                    <span className="text-zinc-400">Total a Cobrar</span>
+                                    <span className="text-3xl font-black text-[#ccff00]">${saleCart.reduce((acc, i) => acc + (i.price * i.quantity), 0).toLocaleString()}</span>
                                 </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <button onClick={() => setIsMakingSale(false)} className="py-3 rounded-lg border border-white/10 text-zinc-400 hover:bg-white/5 font-medium">Cancelar</button>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button onClick={() => setIsMakingSale(false)} className="py-3 rounded-xl border border-white/10 text-zinc-400 hover:bg-white/5 font-bold text-sm">Cancelar</button>
                                     <button 
                                         onClick={confirmSale}
-                                        disabled={!selectedClientForSale || saleCart.length === 0}
-                                        className="py-3 rounded-lg bg-[#ccff00] text-black font-bold hover:bg-[#b3e600] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                                        disabled={!selectedClientId || saleCart.length === 0}
+                                        className="py-3 rounded-xl bg-[#ccff00] text-black font-black hover:bg-[#b3e600] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg text-sm uppercase tracking-wide"
                                     >
-                                        Confirmar
+                                        Confirmar Venta
                                     </button>
                                 </div>
                             </div>
