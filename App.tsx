@@ -28,7 +28,6 @@ function App() {
   const [socialReviews, setSocialReviews] = useFirestore<SocialReview[]>('socialReviews', initialSocialReviews);
   const [directOrders, setDirectOrders] = useFirestore<ResellerOrder[]>('directOrders', []);
   
-  // NUEVO: Estado para historial de ventas manuales del admin
   const [adminSales, setAdminSales] = useFirestore<Sale[]>('adminSales', []);
   
   const [currentView, setCurrentView] = useState<'shop' | 'admin' | 'reseller' | 'login'>('shop');
@@ -199,7 +198,7 @@ function App() {
             setSiteContent={setSiteContent}
             directOrders={directOrders}
             setDirectOrders={setDirectOrders}
-            adminSales={adminSales} // Pasamos la nueva prop
+            adminSales={adminSales} 
             setAdminSales={setAdminSales}
         />
       );
@@ -217,6 +216,7 @@ function App() {
                 }}
                 initialUser={loggedReseller}
                 products={products}
+                siteContent={siteContent}
             />
             {showToast && (
                 <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-[#ccff00] text-black px-6 py-3 rounded-full shadow-2xl z-[100] animate-slide-up font-bold flex items-center gap-2 border border-black/10">
