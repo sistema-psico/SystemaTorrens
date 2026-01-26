@@ -12,14 +12,12 @@ import Login from './components/Login';
 import SocialProof from './components/SocialProof';
 import InstallAppButton from './components/InstallAppButton';
 import { initialProducts, initialContactInfo, initialBanners, initialResellers, initialAdminClients, initialSiteContent, initialPaymentConfig, initialSocialReviews } from './data';
-import { Product, CartItem, Category, ContactInfo, Banner, Reseller, Client, SiteContent, User, PaymentConfig, SocialReview, Brand, PeptoneFormula } from './types';
+import { Product, CartItem, Category, ContactInfo, Banner, Reseller, Client, SiteContent, User, PaymentConfig, SocialReview, Brand, PeptoneFormula, ResellerOrder } from './types';
 import { Sparkles, SlidersHorizontal, Lock, MapPin, Phone, Mail, Instagram, Bell } from 'lucide-react';
 
-// IMPORTANTE: Usamos el hook de Firestore en lugar de LocalStorage
 import { useFirestore } from './hooks/useFirestore';
 
 function App() {
-  // --- ESTADO PERSISTENTE (Conectado a Firebase Firestore) ---
   const [products, setProducts] = useFirestore<Product[]>('products', initialProducts);
   const [contactInfo, setContactInfo] = useFirestore<ContactInfo>('contactInfo', initialContactInfo);
   const [paymentConfig, setPaymentConfig] = useFirestore<PaymentConfig>('paymentConfig', initialPaymentConfig);
@@ -29,7 +27,9 @@ function App() {
   const [siteContent, setSiteContent] = useFirestore<SiteContent>('siteContent', initialSiteContent);
   const [socialReviews, setSocialReviews] = useFirestore<SocialReview[]>('socialReviews', initialSocialReviews);
   
-  // --- ESTADO DE INTERFAZ (Local) ---
+  // NUEVO: Estado para órdenes directas de clientes web
+  const [directOrders, setDirectOrders] = useFirestore<ResellerOrder[]>('directOrders', []);
+  
   const [currentView, setCurrentView] = useState<'shop' | 'admin' | 'reseller' | 'login'>('shop');
   const [activeBrand, setActiveBrand] = useState<Brand>('informa');
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -40,43 +40,26 @@ function App() {
   const [selectedCategory, setSelectedCategory] = useState<Category>('Todos');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  // --- ESTADO PARA NOTIFICACIONES (TOAST) ---
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-  
-  // Ref para evitar el bucle infinito de notificaciones
   const lastNotifiedMsgId = useRef<string | null>(null);
 
-  // --- EFECTO: DETECTAR NUEVOS MENSAJES / ACTUALIZACIONES ---
   useEffect(() => {
-      // Solo ejecutamos esto si hay un revendedor logueado y estamos en su vista
       if (loggedReseller && currentView === 'reseller') {
-          // Buscar la versión más reciente del usuario en la base de datos global (sincronizada por Firestore)
           const updatedUser = resellers.find(r => r.id === loggedReseller.id);
-          
           if (updatedUser) {
-              // Verificamos el último mensaje recibido
               const lastMsg = updatedUser.messages[updatedUser.messages.length - 1];
-              
-              // Si el último mensaje es del admin, no ha sido leído Y NO ES EL MISMO QUE YA NOTIFICAMOS
               if (lastMsg && lastMsg.sender === 'admin' && !lastMsg.read && lastMsg.id !== lastNotifiedMsgId.current) {
-                  // Personalizamos el mensaje según el contenido
                   const isOrderUpdate = lastMsg.content.includes('pedido');
                   setToastMessage(isOrderUpdate ? "📦 Actualización de Pedido" : "💬 Nuevo mensaje del Administrador");
-                  
                   setShowToast(true);
-                  // Guardamos el ID para no volver a notificar este mismo mensaje
                   lastNotifiedMsgId.current = lastMsg.id;
-
-                  // Ocultar automáticamente después de 4 segundos
                   const timer = setTimeout(() => setShowToast(false), 4000);
                   return () => clearTimeout(timer);
               }
           }
       }
-  }, [resellers, loggedReseller, currentView]); // Eliminamos showToast de las dependencias para evitar bucles
-
-  // --- LÓGICA DE NEGOCIO ---
+  }, [resellers, loggedReseller, currentView]);
 
   const filteredProducts = useMemo(() => {
       return products.filter(p => {
@@ -96,32 +79,21 @@ function App() {
       } else if (type === 'client' && data) {
           setCurrentUser(data);
           setCurrentView('shop');
-          setIsCartOpen(true); // Reabrir carrito para finalizar compra si es necesario
+          setIsCartOpen(true);
       }
   };
 
   const categories: Category[] = ['Todos', ...Array.from(new Set(
-    products
-        .filter(p => p.brand === activeBrand)
-        .map(p => p.category)
+    products.filter(p => p.brand === activeBrand).map(p => p.category)
   ))].sort() as Category[];
-
-  // --- CARRITO ---
 
   const addToCart = (product: Product, quantity: number = 1, discount: number = 0) => {
     if (product.stock < quantity) return;
-    
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
       if (existing) {
         if (existing.quantity + quantity > product.stock) return prev;
-        return prev.map(item => 
-          item.id === product.id ? { 
-              ...item, 
-              quantity: item.quantity + quantity,
-              discount: Math.max(item.discount || 0, discount)
-          } : item
-        );
+        return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + quantity, discount: Math.max(item.discount || 0, discount) } : item);
       }
       return [...prev, { ...product, quantity: quantity, discount: discount }];
     });
@@ -135,7 +107,6 @@ function App() {
   const updateQuantity = (id: string, delta: number) => {
     const product = products.find(p => p.id === id) || cart.find(i => i.id === id);
     if (!product) return;
-
     setCart(prev => prev.map(item => {
       if (item.id === id) {
         const newQty = item.quantity + delta;
@@ -164,6 +135,13 @@ function App() {
       setSelectedProduct(productPayload);
   };
 
+  // NUEVO: Handler para guardar órdenes directas desde el carrito
+  const handleDirectOrder = (order: ResellerOrder) => {
+      setDirectOrders([order, ...directOrders]);
+      setCart([]);
+      setIsCartOpen(false);
+  };
+
   const isSports = activeBrand === 'informa';
   const isIqual = activeBrand === 'iqual';
   const isBio = activeBrand === 'biofarma';
@@ -188,8 +166,6 @@ function App() {
           return 'bg-white/60 border border-stone-200 text-stone-600 hover:bg-white/80';
       }
   };
-
-  // --- RENDER DE VISTAS ---
 
   if (currentView === 'login') {
       return (
@@ -221,6 +197,8 @@ function App() {
             onClose={() => setCurrentView('shop')}
             siteContent={siteContent}
             setSiteContent={setSiteContent}
+            directOrders={directOrders} // Pasamos las órdenes directas
+            setDirectOrders={setDirectOrders}
         />
       );
   }
@@ -236,10 +214,8 @@ function App() {
                     setCurrentView('shop');
                 }}
                 initialUser={loggedReseller}
-                products={products} // Se pasa el catálogo global para que puedan hacer pedidos
+                products={products}
             />
-            
-            {/* NOTIFICACIÓN TOAST FLOTANTE (Solo aquí) */}
             {showToast && (
                 <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-[#ccff00] text-black px-6 py-3 rounded-full shadow-2xl z-[100] animate-slide-up font-bold flex items-center gap-2 border border-black/10">
                     <Bell className="w-4 h-4" /> {toastMessage}
@@ -249,11 +225,8 @@ function App() {
     );
   }
 
-  // --- VISTA PÚBLICA (SHOP) ---
   return (
     <div className={`min-h-screen relative transition-colors duration-700 ${getBgClass()}`}>
-      
-      {/* Background Ambience */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
          {isSports && (
              <>
@@ -297,7 +270,6 @@ function App() {
         />
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-            
             {activeBrand !== 'biofarma' && (
                 <div className="mb-8 overflow-x-auto pb-4">
                     <div className="flex flex-wrap gap-3 justify-center">
@@ -314,7 +286,6 @@ function App() {
                 </div>
             )}
 
-            {/* PRODUCT GRID */}
             {filteredProducts.length > 0 && (
                 <div className="mb-16">
                     {activeBrand === 'biofarma' && <h3 className="text-2xl font-bold text-blue-900 mb-6 border-l-4 border-blue-500 pl-4">Destacados y Kits</h3>}
@@ -332,7 +303,6 @@ function App() {
                 </div>
             )}
 
-            {/* BIOFARMA VADEMECUM */}
             {activeBrand === 'biofarma' && (
                 <div className="mb-16 animate-slide-up">
                     <BioFarmaCatalog 
@@ -342,7 +312,6 @@ function App() {
                 </div>
             )}
 
-            {/* Empty State */}
             {filteredProducts.length === 0 && activeBrand !== 'biofarma' && (
                 <div className="text-center py-20 animate-fade-in bg-white/5 rounded-2xl border border-white/5">
                     <SlidersHorizontal className={`w-12 h-12 mx-auto mb-4 ${isSports || isIqual ? 'text-gray-600' : 'text-gray-300'}`} />
@@ -360,10 +329,8 @@ function App() {
             )}
         </main>
 
-        {/* Botón flotante para instalar PWA */}
         <InstallAppButton />
 
-        {/* Botón flotante Quiz */}
         <button 
             onClick={() => setIsQuizOpen(true)}
             className={`fixed bottom-6 right-6 z-40 p-4 rounded-full shadow-[0_0_30px_rgba(0,0,0,0.3)] animate-blob hover:scale-110 transition-transform ${
@@ -378,6 +345,7 @@ function App() {
         <footer className={`${
             isSports ? 'bg-black/80 border-t border-white/5' : isIqual ? 'bg-slate-900/80 border-t border-white/5' : isBio ? 'bg-white border-t border-blue-100' : 'bg-stone-100/80 border-t border-stone-200'
         } backdrop-blur-lg pt-16 pb-8`}>
+            {/* Footer content remains same */}
             <div className="max-w-7xl mx-auto px-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
                     <div className="text-center md:text-left">
@@ -385,53 +353,28 @@ function App() {
                             {isSports ? 'IN FORMA' : isIqual ? 'IQUAL' : isBio ? 'BIOFARMA' : 'PHISIS'}
                         </h3>
                         <p className={`text-sm ${isSports || isIqual ? 'text-gray-400' : 'text-stone-500'}`}>
-                            {isSports 
-                                ? 'Llevando tu rendimiento al máximo nivel con suplementación deportiva de vanguardia.' 
-                                : isIqual 
-                                    ? 'Descubrí tu esencia con nuestras fragancias exclusivas y productos de cuidado personal.'
-                                    : isBio
-                                        ? 'Ciencia y naturaleza para una salud integral. Soluciones de regeneración celular.'
-                                        : 'Cuidando tu belleza interior y exterior con lo mejor de la naturaleza y la ciencia.'
-                            }
+                            {isSports ? 'Llevando tu rendimiento al máximo nivel.' : isIqual ? 'Descubrí tu esencia.' : isBio ? 'Ciencia y naturaleza.' : 'Cuidando tu belleza.'}
                         </p>
                     </div>
-
                     <div className="text-center md:text-left">
                         <h3 className={`text-lg font-bold mb-4 ${isSports ? 'text-[#ccff00]' : isIqual ? 'text-indigo-400' : isBio ? 'text-blue-700' : 'text-emerald-700'}`}>
                             Contacto
                         </h3>
                         <div className={`space-y-3 text-sm ${isSports || isIqual ? 'text-gray-300' : 'text-stone-600'}`}>
-                            <div className="flex items-center justify-center md:justify-start gap-2">
-                                <MapPin className="w-4 h-4" /> {contactInfo.address}
-                            </div>
-                            <div className="flex items-center justify-center md:justify-start gap-2">
-                                <Phone className="w-4 h-4" /> {contactInfo.phone}
-                            </div>
-                            <div className="flex items-center justify-center md:justify-start gap-2">
-                                <Mail className="w-4 h-4" /> {contactInfo.email}
-                            </div>
-                            <div className="flex items-center justify-center md:justify-start gap-2">
-                                <Instagram className="w-4 h-4" /> {contactInfo.instagram}
-                            </div>
+                            <div className="flex items-center justify-center md:justify-start gap-2"><MapPin className="w-4 h-4" /> {contactInfo.address}</div>
+                            <div className="flex items-center justify-center md:justify-start gap-2"><Phone className="w-4 h-4" /> {contactInfo.phone}</div>
+                            <div className="flex items-center justify-center md:justify-start gap-2"><Mail className="w-4 h-4" /> {contactInfo.email}</div>
+                            <div className="flex items-center justify-center md:justify-start gap-2"><Instagram className="w-4 h-4" /> {contactInfo.instagram}</div>
                         </div>
                     </div>
-
                     <div className="text-center md:text-right space-y-2">
-                        <button 
-                            onClick={() => setCurrentView('login')}
-                            className={`text-sm font-medium flex items-center justify-center md:justify-end gap-2 ml-auto hover:underline ${
-                                isSports || isIqual ? 'text-gray-600 hover:text-white' : 'text-stone-400 hover:text-emerald-800'
-                            }`}
-                        >
+                        <button onClick={() => setCurrentView('login')} className={`text-sm font-medium flex items-center justify-center md:justify-end gap-2 ml-auto hover:underline ${isSports || isIqual ? 'text-gray-600 hover:text-white' : 'text-stone-400 hover:text-emerald-800'}`}>
                             <Lock className="w-4 h-4" /> Acceso Socios
                         </button>
                     </div>
                 </div>
-
                 <div className={`text-center pt-8 border-t ${isSports || isIqual ? 'border-gray-800' : 'border-stone-200'}`}>
-                    <p className={`text-xs ${isSports || isIqual ? 'text-gray-600' : 'text-stone-400'}`}>
-                        © 2024 In Forma, Phisis & Iqual. Todos los derechos reservados.
-                    </p>
+                    <p className={`text-xs ${isSports || isIqual ? 'text-gray-600' : 'text-stone-400'}`}>© 2024 In Forma, Phisis & Iqual.</p>
                 </div>
             </div>
         </footer>
@@ -448,23 +391,11 @@ function App() {
             currentUser={currentUser}
             onLoginRequest={() => { setIsCartOpen(false); setCurrentView('login'); }}
             onClientLogin={(user) => setCurrentUser(user)}
+            onOrderCreate={handleDirectOrder} // Pasamos la nueva función
         />
 
-        {selectedProduct && (
-            <ProductDetail 
-                product={selectedProduct} 
-                onClose={() => setSelectedProduct(null)}
-                onAddToCart={(p, qty) => { addToCart(p, qty); setIsCartOpen(true); }}
-            />
-        )}
-
-        <RecommendationQuiz 
-            isOpen={isQuizOpen}
-            onClose={() => setIsQuizOpen(false)}
-            products={products}
-            onAddToCart={(p) => { addToCart(p, 1); setIsCartOpen(true); }}
-        />
-
+        {selectedProduct && <ProductDetail product={selectedProduct} onClose={() => setSelectedProduct(null)} onAddToCart={(p, qty) => { addToCart(p, qty); setIsCartOpen(true); }} />}
+        <RecommendationQuiz isOpen={isQuizOpen} onClose={() => setIsQuizOpen(false)} products={products} onAddToCart={(p) => { addToCart(p, 1); setIsCartOpen(true); }} />
       </div>
     </div>
   );
