@@ -1,20 +1,22 @@
 import React, { useState } from 'react';
-import { Reseller, Product, CartItem, ResellerOrder } from '../../types';
+import { Reseller, Product, CartItem, ResellerOrder, SiteContent } from '../../types';
 import { Plus, ShoppingCart, Trash2, X, Package } from 'lucide-react';
 
 interface ResellerOrdersProps {
     currentUser: Reseller;
     adminProducts: Product[];
     onUpdateReseller: (updated: Reseller) => void;
+    siteContent: SiteContent; // <--- Recibimos la configuración
 }
 
-const ResellerOrders: React.FC<ResellerOrdersProps> = ({ currentUser, adminProducts, onUpdateReseller }) => {
+const ResellerOrders: React.FC<ResellerOrdersProps> = ({ currentUser, adminProducts, onUpdateReseller, siteContent }) => {
     const [isCreatingOrder, setIsCreatingOrder] = useState(false);
     const [orderCart, setOrderCart] = useState<CartItem[]>([]);
     
-    const WHOLESALE_DISCOUNT = 0.30; 
+    // USAMOS EL DESCUENTO CONFIGURADO (o 0 si no existe) DIVIDIDO POR 100
+    const WHOLESALE_DISCOUNT = (siteContent.resellerDiscount || 0) / 100; 
 
-    // --- CART LOGIC ---
+    // ... (El resto de la lógica se mantiene igual, solo cambia el uso de la constante)
     const addToOrderCart = (product: Product) => {
         setOrderCart(prev => {
             const existing = prev.find(p => p.id === product.id);
@@ -33,25 +35,20 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ currentUser, adminProdu
         if (orderCart.length === 0) return;
 
         const totalPublic = orderCart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+        // Aplicamos el descuento dinámico
         const totalWholesale = totalPublic * (1 - WHOLESALE_DISCOUNT);
 
-        // 1. Crear el registro del pedido con estado "Preparando"
         const newOrder: ResellerOrder = {
             id: `PED-${Date.now()}`,
             clientId: currentUser.id,
             clientName: currentUser.name,
             items: [...orderCart],
             total: totalWholesale,
-            status: 'Pendiente', // Usamos 'Pendiente' para indicar 'Preparando' al Admin
+            status: 'Pendiente',
             date: new Date().toLocaleDateString(),
             deliveryTimeEstimate: 'A confirmar'
         };
 
-        // NOTA: No sumamos stock aún. El stock se suma cuando llega (Entregado) o manualmente. 
-        // Por simplificación actual, lo dejaremos para ingreso manual o cuando el admin marque "Entregado" si quisieras automatizarlo más.
-        // Por ahora, solo registramos el pedido.
-
-        // 3. Guardar pedido
         onUpdateReseller({
             ...currentUser,
             orders: [newOrder, ...currentUser.orders]
@@ -66,7 +63,8 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ currentUser, adminProdu
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h1 className="text-3xl font-bold text-white">Pedidos de Reposición</h1>
-                    <p className="text-zinc-400 text-sm">Compra stock al administrador con precio mayorista.</p>
+                    {/* Mostramos el descuento actual en pantalla */}
+                    <p className="text-zinc-400 text-sm">Compra stock al administrador con <span className="text-[#ccff00] font-bold">{siteContent.resellerDiscount}% OFF</span>.</p>
                 </div>
                 <button 
                     onClick={() => setIsCreatingOrder(true)}
@@ -76,7 +74,7 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ currentUser, adminProdu
                 </button>
             </div>
 
-            {/* Historial de Pedidos */}
+            {/* Historial de Pedidos (Igual) */}
             <div className="bg-zinc-900/40 backdrop-blur-md rounded-2xl border border-white/5 p-6 min-h-[300px]">
                 {currentUser.orders.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full pt-10 text-zinc-500">
@@ -109,17 +107,16 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ currentUser, adminProdu
                 )}
             </div>
 
-            {/* MODAL DE NUEVO PEDIDO */}
+            {/* MODAL (Actualizado para mostrar el descuento dinámico) */}
             {isCreatingOrder && (
                 <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[60] flex items-center justify-center p-4">
                     <div className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-6xl h-[90vh] flex overflow-hidden animate-scale-in shadow-2xl">
-                        
-                        {/* Izquierda: Catálogo */}
+                        {/* Izquierda: Catálogo (Igual) */}
                         <div className="w-2/3 border-r border-white/10 flex flex-col">
                             <div className="p-6 border-b border-white/10 bg-black/20 flex justify-between items-center">
                                 <div>
                                     <h3 className="text-white font-bold text-xl">Catálogo Mayorista</h3>
-                                    <p className="text-zinc-400 text-xs">Precios sugeridos al público (Tú pagas -30%)</p>
+                                    <p className="text-zinc-400 text-xs">Precios sugeridos al público (Tú pagas -{siteContent.resellerDiscount}%)</p>
                                 </div>
                                 <input type="text" placeholder="Buscar producto..." className="bg-black/50 border border-white/10 p-2 rounded-lg text-white outline-none focus:border-[#ccff00] w-64" />
                             </div>
@@ -134,7 +131,6 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ currentUser, adminProdu
                                         </div>
                                         <img src={product.image} className="w-full h-32 object-cover rounded-lg mb-3 bg-zinc-800" alt={product.name}/>
                                         <h4 className="text-white font-bold text-sm mb-1">{product.name}</h4>
-                                        
                                         <div className="mt-auto pt-3">
                                             <button 
                                                 onClick={() => addToOrderCart(product)}
@@ -148,7 +144,7 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ currentUser, adminProdu
                             </div>
                         </div>
 
-                        {/* Derecha: Carrito */}
+                        {/* Derecha: Carrito con Cálculos Dinámicos */}
                         <div className="w-1/3 flex flex-col bg-black/40">
                             <div className="p-6 border-b border-white/10 flex justify-between items-center">
                                 <h3 className="text-white font-bold">Tu Pedido</h3>
@@ -180,7 +176,7 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ currentUser, adminProdu
                                         <span>${orderCart.reduce((acc, i) => acc + (i.price * i.quantity), 0).toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between text-[#ccff00]">
-                                        <span>Descuento Revendedor (30%)</span>
+                                        <span>Descuento Revendedor ({siteContent.resellerDiscount}%)</span>
                                         <span>-${(orderCart.reduce((acc, i) => acc + (i.price * i.quantity), 0) * WHOLESALE_DISCOUNT).toLocaleString()}</span>
                                     </div>
                                 </div>
