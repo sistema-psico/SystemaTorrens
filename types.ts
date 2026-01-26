@@ -1,4 +1,3 @@
-
 export type Brand = 'informa' | 'phisis' | 'iqual' | 'biofarma';
 
 export interface User {
@@ -117,6 +116,7 @@ export interface Client {
   id: string;
   name: string;
   phone: string;
+  email?: string; // Nuevo campo agregado para contacto
   address: string;
   paymentMethod: 'Efectivo' | 'Transferencia' | 'Tarjeta';
   currentAccountBalance: number; // Saldo deudor o a favor
