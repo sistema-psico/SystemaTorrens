@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Product, ContactInfo, Banner, Reseller, Client, SiteContent, PaymentConfig, SocialReview, ResellerOrder } from '../types';
+import { Product, ContactInfo, Banner, Reseller, Client, SiteContent, PaymentConfig, SocialReview, ResellerOrder, Sale } from '../types';
 import { 
   X, Settings, Package, LayoutDashboard, 
   Tag, Users, UserCircle, Bell, BarChart3, 
-  Truck
+  Truck, DollarSign // <--- Importamos ícono
 } from 'lucide-react';
 
 import InventoryTab from './admin/InventoryTab';
@@ -14,6 +14,7 @@ import MessagesTab from './admin/MessagesTab';
 import AnalyticsTab from './admin/AnalyticsTab';
 import SettingsTab from './admin/SettingsTab';
 import OrdersTab from './admin/OrdersTab';
+import AdminSales from './admin/AdminSales'; // <--- Importamos componente nuevo
 
 interface AdminPanelProps {
   products: Product[];
@@ -33,18 +34,20 @@ interface AdminPanelProps {
   onClose: () => void;
   siteContent: SiteContent;
   setSiteContent: (content: SiteContent) => void;
-  // Nuevas props para ventas directas
   directOrders?: ResellerOrder[];
   setDirectOrders?: (orders: ResellerOrder[]) => void;
+  // Nuevas props para ventas admin
+  adminSales?: Sale[];
+  setAdminSales?: (sales: Sale[]) => void;
 }
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ 
   products = [], setProducts, contactInfo, setContactInfo, paymentConfig, setPaymentConfig,
   banners = [], setBanners, socialReviews = [], setSocialReviews, resellers = [], setResellers,
   adminClients = [], setAdminClients, onClose, siteContent, setSiteContent,
-  directOrders = [], setDirectOrders
+  directOrders = [], setDirectOrders, adminSales = [], setAdminSales
 }) => {
-  const [activeTab, setActiveTab] = useState<'inventory' | 'settings' | 'promotions' | 'resellers' | 'clients' | 'messages' | 'analytics' | 'orders'>('orders');
+  const [activeTab, setActiveTab] = useState<'inventory' | 'settings' | 'promotions' | 'resellers' | 'clients' | 'messages' | 'analytics' | 'orders' | 'adminSales'>('orders');
 
   if (!products || !contactInfo || !siteContent) {
       return <div className="min-h-screen bg-zinc-900 text-white flex items-center justify-center">Cargando...</div>;
@@ -72,8 +75,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         
         <nav className="flex-1 p-4 space-y-2">
           {[
-            { id: 'inventory', icon: Package, label: 'Inventario' },
             { id: 'orders', icon: Truck, label: 'Pedidos', badge: totalPending, badgeColor: 'bg-blue-600' },
+            { id: 'adminSales', icon: DollarSign, label: 'Ventas Directas' }, // <--- Nuevo botón
+            { id: 'inventory', icon: Package, label: 'Inventario' },
             { id: 'promotions', icon: Tag, label: 'Promociones' },
             { id: 'analytics', icon: BarChart3, label: 'Estadísticas' },
             { id: 'messages', icon: Bell, label: 'Mensajes', badge: totalUnreadMessages, badgeColor: 'bg-red-500' },
@@ -111,8 +115,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       </div>
 
       <div className="relative ml-64 p-8 z-10 overflow-y-auto h-screen">
-        {activeTab === 'inventory' && <InventoryTab products={products} setProducts={setProducts} resellers={resellers} />}
         {activeTab === 'orders' && <OrdersTab resellers={resellers} setResellers={setResellers} directOrders={directOrders} setDirectOrders={setDirectOrders!} />}
+        {activeTab === 'adminSales' && <AdminSales products={products} setProducts={setProducts} adminClients={adminClients} setAdminClients={setAdminClients} adminSales={adminSales} setAdminSales={setAdminSales!} />}
+        {activeTab === 'inventory' && <InventoryTab products={products} setProducts={setProducts} resellers={resellers} />}
         {activeTab === 'promotions' && <PromotionsTab banners={banners} setBanners={setBanners} products={products} />}
         {activeTab === 'resellers' && <ResellersTab resellers={resellers} setResellers={setResellers} products={products} />}
         {activeTab === 'clients' && <ClientsTab adminClients={adminClients} setAdminClients={setAdminClients} />}
