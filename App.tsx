@@ -447,6 +447,7 @@ function App() {
             paymentConfig={paymentConfig}
             currentUser={currentUser}
             onLoginRequest={() => { setIsCartOpen(false); setCurrentView('login'); }}
+            onClientLogin={(user) => setCurrentUser(user)}
         />
 
         {selectedProduct && (
