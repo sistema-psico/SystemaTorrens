@@ -4,7 +4,7 @@ import {
     Search, Plus, Edit2, Trash2, Eye, EyeOff, Upload, Loader2, Image as ImageIcon
 } from 'lucide-react';
 import Toast, { ToastType } from '../Toast';
-import { useImageUpload } from '../../hooks/useImageUpload'; // <--- Importamos nuestro nuevo hook
+import { useImageUpload } from '../../hooks/useImageUpload';
 
 interface InventoryTabProps {
     products: Product[];
@@ -42,7 +42,9 @@ const InventoryTab: React.FC<InventoryTabProps> = ({ products, setProducts, rese
             return;
         }
 
-        const url = await uploadImage(file, 'products');
+        // CORRECCIÓN AQUÍ: Se eliminó el segundo argumento 'products'
+        const url = await uploadImage(file);
+        
         if (url) {
             setCurrentProduct(prev => ({ ...prev, image: url }));
             showToast("Imagen subida correctamente", 'success');
