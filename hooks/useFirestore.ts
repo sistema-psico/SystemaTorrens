@@ -7,17 +7,16 @@ export function useFirestore<T>(key: string, initialValue: T) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Escuchar cambios en tiempo real desde la colección 'app_data'
+    if (!db) return;
+    
     const docRef = doc(db, "app_data", key);
 
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
-        // Si hay datos en la nube, úsalos
         setStoredValue(docSnap.data().value as T);
       } else {
-        // Si NO hay datos (base de datos nueva), sube los datos iniciales
+        // Si no existen datos (primera vez), subimos los iniciales
         setDoc(docRef, { value: initialValue })
-          .then(() => console.log(`Datos iniciales migrados para: ${key}`))
           .catch(e => console.error("Error migrando datos:", e));
       }
       setLoading(false);
@@ -26,7 +25,6 @@ export function useFirestore<T>(key: string, initialValue: T) {
     return () => unsubscribe();
   }, [key]);
 
-  // Función para guardar (actualiza local y nube)
   const setValue = async (value: T | ((val: T) => T)) => {
     try {
       const valueToStore = value instanceof Function ? value(storedValue) : value;
