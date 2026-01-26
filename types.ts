@@ -57,6 +57,7 @@ export interface CartItem extends Product {
   selectedPresentation?: string;
 }
 
+// --- ACTUALIZACIÓN AQUÍ ---
 export interface SiteContent {
   sportsHeroTitle1: string;
   sportsHeroTitle2: string;
@@ -81,6 +82,10 @@ export interface SiteContent {
   bioHeroDescription: string;
   logoBiofarma?: string;
   bioHeroBg?: string;
+
+  // Nuevos campos de configuración de descuentos
+  resellerDiscount: number; // Porcentaje (ej: 30)
+  globalOfferDiscount: number; // Porcentaje (ej: 10) para ofertas eventuales
 }
 
 export interface ContactInfo {
@@ -109,8 +114,6 @@ export interface Banner {
 
 export type Category = 'Todos' | 'Alto Rendimiento' | 'Adelgazantes' | 'Energizantes' | 'Nutricosmética' | 'Cuidado Piel' | 'Fragancias' | 'Cuidado Corporal' | 'Facial' | 'Salud Integral' | 'Peptonas' | 'Revitalización' | 'Genética';
 
-// --- RESELLER & ORDER TYPES ---
-
 export interface Client {
   id: string;
   name: string;
@@ -130,7 +133,6 @@ export interface Message {
   read: boolean;
 }
 
-// Nueva interfaz para datos de envío
 export interface ShippingInfo {
     address: string;
     phone: string;
@@ -148,8 +150,8 @@ export interface ResellerOrder {
   status: 'Pendiente' | 'En Camino' | 'Entregado' | 'Cancelado';
   date: string;
   deliveryTimeEstimate?: string;
-  shippingInfo?: ShippingInfo; // Nuevo campo opcional
-  type?: 'reseller' | 'direct'; // Para distinguir origen
+  shippingInfo?: ShippingInfo;
+  type?: 'reseller' | 'direct';
 }
 
 export interface Sale {
