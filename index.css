@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Tus estilos personalizados adicionales si los tienes */
 body { margin: 0; font-family: 'Inter', sans-serif; }
 
 /* Custom Scrollbar */
