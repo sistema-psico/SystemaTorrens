@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { Product, ContactInfo, Banner, Reseller, Client, SiteContent, PaymentConfig, SocialReview } from '../types';
+import { Product, ContactInfo, Banner, Reseller, Client, SiteContent, PaymentConfig, SocialReview, ResellerOrder } from '../types';
 import { 
   X, Settings, Package, LayoutDashboard, 
   Tag, Users, UserCircle, Bell, BarChart3, 
   Truck
 } from 'lucide-react';
 
-// Importamos los componentes modulares
 import InventoryTab from './admin/InventoryTab';
 import PromotionsTab from './admin/PromotionsTab';
 import ResellersTab from './admin/ResellersTab';
@@ -34,12 +33,16 @@ interface AdminPanelProps {
   onClose: () => void;
   siteContent: SiteContent;
   setSiteContent: (content: SiteContent) => void;
+  // Nuevas props para ventas directas
+  directOrders?: ResellerOrder[];
+  setDirectOrders?: (orders: ResellerOrder[]) => void;
 }
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ 
   products = [], setProducts, contactInfo, setContactInfo, paymentConfig, setPaymentConfig,
   banners = [], setBanners, socialReviews = [], setSocialReviews, resellers = [], setResellers,
-  adminClients = [], setAdminClients, onClose, siteContent, setSiteContent
+  adminClients = [], setAdminClients, onClose, siteContent, setSiteContent,
+  directOrders = [], setDirectOrders
 }) => {
   const [activeTab, setActiveTab] = useState<'inventory' | 'settings' | 'promotions' | 'resellers' | 'clients' | 'messages' | 'analytics' | 'orders'>('orders');
 
@@ -47,20 +50,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       return <div className="min-h-screen bg-zinc-900 text-white flex items-center justify-center">Cargando...</div>;
   }
 
-  // --- CÁLCULO DE NOTIFICACIONES ---
   const totalUnreadMessages = resellers.reduce((acc, r) => acc + r.messages.filter(m => m.sender === 'reseller' && !m.read).length, 0);
-  const pendingOrdersCount = resellers.reduce((acc, r) => acc + r.orders.filter(o => o.status === 'Pendiente').length, 0);
+  const pendingResellerOrders = resellers.reduce((acc, r) => acc + r.orders.filter(o => o.status === 'Pendiente').length, 0);
+  const pendingDirectOrders = directOrders.filter(o => o.status === 'Pendiente').length;
+  const totalPending = pendingResellerOrders + pendingDirectOrders;
 
   return (
     <div className="min-h-screen relative bg-[#0a0a0a] font-sans text-gray-200 selection:bg-[#ccff00] selection:text-black overflow-hidden">
       
-      {/* Background Ambience */}
       <div className="fixed inset-0 z-0 pointer-events-none">
          <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-[#ccff00]/10 rounded-full blur-[100px] animate-blob"></div>
          <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-900/10 rounded-full blur-[100px] animate-blob animation-delay-2000"></div>
       </div>
       
-      {/* Sidebar */}
       <div className="fixed inset-y-0 left-0 w-64 bg-black/60 backdrop-blur-xl border-r border-white/10 shadow-2xl flex flex-col z-50">
         <div className="p-6 border-b border-white/10">
           <h2 className="text-xl font-bold flex items-center gap-2 text-white italic">
@@ -71,7 +73,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         <nav className="flex-1 p-4 space-y-2">
           {[
             { id: 'inventory', icon: Package, label: 'Inventario' },
-            { id: 'orders', icon: Truck, label: 'Pedidos', badge: pendingOrdersCount, badgeColor: 'bg-blue-600' },
+            { id: 'orders', icon: Truck, label: 'Pedidos', badge: totalPending, badgeColor: 'bg-blue-600' },
             { id: 'promotions', icon: Tag, label: 'Promociones' },
             { id: 'analytics', icon: BarChart3, label: 'Estadísticas' },
             { id: 'messages', icon: Bell, label: 'Mensajes', badge: totalUnreadMessages, badgeColor: 'bg-red-500' },
@@ -108,10 +110,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="relative ml-64 p-8 z-10 overflow-y-auto h-screen">
-        {activeTab === 'inventory' && <InventoryTab products={products} setProducts={setProducts} resellers={resellers} />} {/* <-- AQUI PASAMOS RESELLERS */}
-        {activeTab === 'orders' && <OrdersTab resellers={resellers} setResellers={setResellers} />}
+        {activeTab === 'inventory' && <InventoryTab products={products} setProducts={setProducts} resellers={resellers} />}
+        {activeTab === 'orders' && <OrdersTab resellers={resellers} setResellers={setResellers} directOrders={directOrders} setDirectOrders={setDirectOrders!} />}
         {activeTab === 'promotions' && <PromotionsTab banners={banners} setBanners={setBanners} products={products} />}
         {activeTab === 'resellers' && <ResellersTab resellers={resellers} setResellers={setResellers} products={products} />}
         {activeTab === 'clients' && <ClientsTab adminClients={adminClients} setAdminClients={setAdminClients} />}
