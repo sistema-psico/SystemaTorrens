@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { SiteContent, ContactInfo, PaymentConfig } from '../../types';
 import { 
-    Upload, Image, Banknote, CreditCard, Wallet 
+    Upload, Image, Banknote, CreditCard, Wallet, Save, Loader2 
 } from 'lucide-react';
+import Toast, { ToastType } from '../Toast';
 
 interface SettingsTabProps {
     siteContent: SiteContent;
@@ -14,26 +15,94 @@ interface SettingsTabProps {
 }
 
 const SettingsTab: React.FC<SettingsTabProps> = ({ 
-    siteContent, setSiteContent, contactInfo, setContactInfo, paymentConfig, setPaymentConfig 
+    siteContent, setSiteContent, 
+    contactInfo, setContactInfo, 
+    paymentConfig, setPaymentConfig 
 }) => {
+    // 1. ESTADOS LOCALES (Borradores para editar sin guardar en BD inmediatamente)
+    const [localSiteContent, setLocalSiteContent] = useState<SiteContent>(siteContent);
+    const [localContactInfo, setLocalContactInfo] = useState<ContactInfo>(contactInfo);
+    const [localPaymentConfig, setLocalPaymentConfig] = useState<PaymentConfig>(paymentConfig);
+    
+    // UI States
+    const [isSaving, setIsSaving] = useState(false);
+    const [toast, setToast] = useState<{ show: boolean; message: string; type: ToastType } | null>(null);
+    // Detectar si hay cambios sin guardar
+    const [hasChanges, setHasChanges] = useState(false);
+
+    // 2. SINCRONIZACIÓN INICIAL (Cargar datos de la BD al entrar)
+    useEffect(() => {
+        setLocalSiteContent(siteContent);
+        setLocalContactInfo(contactInfo);
+        setLocalPaymentConfig(paymentConfig);
+    }, []); // Solo al montar, o podrías añadir dependencias si esperas cargas tardías
+
+    // Marcar que hay cambios cuando se edita algo
+    useEffect(() => {
+        setHasChanges(true);
+    }, [localSiteContent, localContactInfo, localPaymentConfig]);
+
+    // 3. MANEJADORES DE GUARDADO
+    const handleSaveAll = async () => {
+        setIsSaving(true);
+        try {
+            // Aquí se actualiza el estado "Real" que dispara el guardado en Firebase (useFirestore)
+            setSiteContent(localSiteContent);
+            setContactInfo(localContactInfo);
+            setPaymentConfig(localPaymentConfig);
+            
+            // Simular un pequeño delay para feedback visual
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            setToast({ show: true, message: "Configuración guardada correctamente", type: 'success' });
+            setHasChanges(false);
+        } catch (error) {
+            setToast({ show: true, message: "Error al guardar configuración", type: 'error' });
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>, fieldKey: keyof SiteContent) => {
         const file = e.target.files?.[0];
         if (file) {
             const reader = new FileReader();
             reader.onloadend = () => {
-                setSiteContent({ ...siteContent, [fieldKey]: reader.result as string });
+                setLocalSiteContent({ ...localSiteContent, [fieldKey]: reader.result as string });
             };
             reader.readAsDataURL(file);
         }
     };
 
     return (
-        <div className="animate-fade-in space-y-12 pb-20">
-             
+        <div className="animate-fade-in space-y-12 pb-32 relative">
+             {/* Notificación Toast */}
+             {toast?.show && (
+                <Toast 
+                    message={toast.message} 
+                    type={toast.type} 
+                    onClose={() => setToast(null)} 
+                />
+            )}
+
+            {/* --- BOTÓN FLOTANTE DE GUARDAR --- */}
+            <div className={`fixed bottom-8 right-8 z-50 transition-all duration-300 ${hasChanges ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
+                <button 
+                    onClick={handleSaveAll}
+                    disabled={isSaving}
+                    className="bg-[#ccff00] text-black px-8 py-4 rounded-full font-black shadow-[0_0_20px_rgba(204,255,0,0.4)] flex items-center gap-3 hover:scale-105 transition-transform disabled:opacity-70 disabled:cursor-not-allowed border-2 border-black"
+                >
+                    {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                    GUARDAR CAMBIOS
+                </button>
+            </div>
+
              {/* 1. Logos Configuration Section */}
              <div>
-                <h1 className="text-3xl font-black text-white italic mb-6">LOGOS E <span className="text-[#ccff00]">IDENTIDAD</span></h1>
+                <div className="flex justify-between items-end mb-6">
+                    <h1 className="text-3xl font-black text-white italic">LOGOS E <span className="text-[#ccff00]">IDENTIDAD</span></h1>
+                </div>
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {[
                         { label: 'In Forma', key: 'logoInforma', color: 'bg-[#ccff00]' },
@@ -47,8 +116,8 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                                  <h3 className="font-bold text-white">{brand.label}</h3>
                             </div>
                             <div className="h-24 bg-black/50 rounded flex items-center justify-center border border-dashed border-white/10 mb-2 overflow-hidden">
-                                {siteContent[brand.key as keyof SiteContent] ? (
-                                    <img src={siteContent[brand.key as keyof SiteContent] as string} className="h-full object-contain" alt={brand.label} />
+                                {localSiteContent[brand.key as keyof SiteContent] ? (
+                                    <img src={localSiteContent[brand.key as keyof SiteContent] as string} className="h-full object-contain" alt={brand.label} />
                                 ) : (
                                     <span className="text-xs text-zinc-500">Sin Logo</span>
                                 )}
@@ -56,8 +125,8 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                             <input 
                                 type="text" 
                                 placeholder="URL del logo" 
-                                value={siteContent[brand.key as keyof SiteContent] as string || ''}
-                                onChange={(e) => setSiteContent({...siteContent, [brand.key]: e.target.value})}
+                                value={localSiteContent[brand.key as keyof SiteContent] as string || ''}
+                                onChange={(e) => setLocalSiteContent({...localSiteContent, [brand.key]: e.target.value})}
                                 className="w-full text-xs bg-black/50 border border-white/10 p-2 rounded text-white outline-none focus:border-white/20" 
                             />
                             <div className="relative">
@@ -76,10 +145,9 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                 </div>
              </div>
 
-             {/* 1.5 Background Images Configuration Section */}
+             {/* 1.5 Background Images */}
              <div>
                 <h1 className="text-3xl font-black text-white italic mb-6">FONDOS DE <span className="text-[#ccff00]">PANTALLA</span></h1>
-                <p className="text-zinc-400 mb-6 text-sm">Carga una imagen para el fondo de la sección principal (Hero) de cada marca.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {[
                         { label: 'Fondo In Forma', key: 'sportsHeroBg', color: 'bg-[#ccff00]' },
@@ -93,8 +161,8 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                                  <h3 className="font-bold text-white">{brand.label}</h3>
                             </div>
                             <div className="h-24 bg-black/50 rounded flex items-center justify-center border border-dashed border-white/10 mb-2 overflow-hidden relative group">
-                                {siteContent[brand.key as keyof SiteContent] ? (
-                                    <img src={siteContent[brand.key as keyof SiteContent] as string} className="w-full h-full object-cover opacity-60" alt={brand.label} />
+                                {localSiteContent[brand.key as keyof SiteContent] ? (
+                                    <img src={localSiteContent[brand.key as keyof SiteContent] as string} className="w-full h-full object-cover opacity-60" alt={brand.label} />
                                 ) : (
                                     <div className="flex flex-col items-center">
                                         <Image className="w-6 h-6 text-zinc-600 mb-1" />
@@ -105,8 +173,8 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                             <input 
                                 type="text" 
                                 placeholder="URL de la imagen" 
-                                value={siteContent[brand.key as keyof SiteContent] as string || ''}
-                                onChange={(e) => setSiteContent({...siteContent, [brand.key]: e.target.value})}
+                                value={localSiteContent[brand.key as keyof SiteContent] as string || ''}
+                                onChange={(e) => setLocalSiteContent({...localSiteContent, [brand.key]: e.target.value})}
                                 className="w-full text-xs bg-black/50 border border-white/10 p-2 rounded text-white outline-none focus:border-white/20" 
                             />
                             <div className="relative">
@@ -129,23 +197,22 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
              <div>
                 <h1 className="text-3xl font-black text-white italic mb-6">PERSONALIZAR <span className="text-[#ccff00]">TEXTOS</span></h1>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    
                     {/* In Forma */}
                     <div className="bg-zinc-900/40 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-white/5 space-y-4">
                         <h3 className="text-[#ccff00] font-bold uppercase tracking-widest text-sm border-b border-white/10 pb-2">Sección Deportes (In Forma)</h3>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-xs font-medium text-zinc-500 mb-1">Título 1</label>
-                                <input type="text" value={siteContent.sportsHeroTitle1} onChange={(e) => setSiteContent({...siteContent, sportsHeroTitle1: e.target.value})} className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white outline-none" />
+                                <input type="text" value={localSiteContent.sportsHeroTitle1} onChange={(e) => setLocalSiteContent({...localSiteContent, sportsHeroTitle1: e.target.value})} className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white outline-none" />
                             </div>
                             <div>
                                 <label className="block text-xs font-medium text-zinc-500 mb-1">Título 2 (Color)</label>
-                                <input type="text" value={siteContent.sportsHeroTitle2} onChange={(e) => setSiteContent({...siteContent, sportsHeroTitle2: e.target.value})} className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white outline-none" />
+                                <input type="text" value={localSiteContent.sportsHeroTitle2} onChange={(e) => setLocalSiteContent({...localSiteContent, sportsHeroTitle2: e.target.value})} className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white outline-none" />
                             </div>
                         </div>
                         <div>
                             <label className="block text-xs font-medium text-zinc-500 mb-1">Descripción</label>
-                            <textarea rows={3} value={siteContent.sportsHeroDescription} onChange={(e) => setSiteContent({...siteContent, sportsHeroDescription: e.target.value})} className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white outline-none" />
+                            <textarea rows={3} value={localSiteContent.sportsHeroDescription} onChange={(e) => setLocalSiteContent({...localSiteContent, sportsHeroDescription: e.target.value})} className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white outline-none" />
                         </div>
                     </div>
 
@@ -155,16 +222,16 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-xs font-medium text-zinc-500 mb-1">Título 1</label>
-                                <input type="text" value={siteContent.beautyHeroTitle1} onChange={(e) => setSiteContent({...siteContent, beautyHeroTitle1: e.target.value})} className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white outline-none" />
+                                <input type="text" value={localSiteContent.beautyHeroTitle1} onChange={(e) => setLocalSiteContent({...localSiteContent, beautyHeroTitle1: e.target.value})} className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white outline-none" />
                             </div>
                             <div>
                                 <label className="block text-xs font-medium text-zinc-500 mb-1">Título 2 (Italic)</label>
-                                <input type="text" value={siteContent.beautyHeroTitle2} onChange={(e) => setSiteContent({...siteContent, beautyHeroTitle2: e.target.value})} className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white outline-none" />
+                                <input type="text" value={localSiteContent.beautyHeroTitle2} onChange={(e) => setLocalSiteContent({...localSiteContent, beautyHeroTitle2: e.target.value})} className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white outline-none" />
                             </div>
                         </div>
                         <div>
                             <label className="block text-xs font-medium text-zinc-500 mb-1">Descripción</label>
-                            <textarea rows={3} value={siteContent.beautyHeroDescription} onChange={(e) => setSiteContent({...siteContent, beautyHeroDescription: e.target.value})} className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white outline-none" />
+                            <textarea rows={3} value={localSiteContent.beautyHeroDescription} onChange={(e) => setLocalSiteContent({...localSiteContent, beautyHeroDescription: e.target.value})} className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white outline-none" />
                         </div>
                     </div>
 
@@ -174,16 +241,16 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-xs font-medium text-zinc-500 mb-1">Título 1</label>
-                                <input type="text" value={siteContent.fragranceHeroTitle1} onChange={(e) => setSiteContent({...siteContent, fragranceHeroTitle1: e.target.value})} className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white outline-none" />
+                                <input type="text" value={localSiteContent.fragranceHeroTitle1} onChange={(e) => setLocalSiteContent({...localSiteContent, fragranceHeroTitle1: e.target.value})} className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white outline-none" />
                             </div>
                             <div>
                                 <label className="block text-xs font-medium text-zinc-500 mb-1">Título 2 (Color)</label>
-                                <input type="text" value={siteContent.fragranceHeroTitle2} onChange={(e) => setSiteContent({...siteContent, fragranceHeroTitle2: e.target.value})} className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white outline-none" />
+                                <input type="text" value={localSiteContent.fragranceHeroTitle2} onChange={(e) => setLocalSiteContent({...localSiteContent, fragranceHeroTitle2: e.target.value})} className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white outline-none" />
                             </div>
                         </div>
                         <div>
                             <label className="block text-xs font-medium text-zinc-500 mb-1">Descripción</label>
-                            <textarea rows={3} value={siteContent.fragranceHeroDescription} onChange={(e) => setSiteContent({...siteContent, fragranceHeroDescription: e.target.value})} className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white outline-none" />
+                            <textarea rows={3} value={localSiteContent.fragranceHeroDescription} onChange={(e) => setLocalSiteContent({...localSiteContent, fragranceHeroDescription: e.target.value})} className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white outline-none" />
                         </div>
                     </div>
 
@@ -193,16 +260,16 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-xs font-medium text-zinc-500 mb-1">Título 1</label>
-                                <input type="text" value={siteContent.bioHeroTitle1} onChange={(e) => setSiteContent({...siteContent, bioHeroTitle1: e.target.value})} className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white outline-none" />
+                                <input type="text" value={localSiteContent.bioHeroTitle1} onChange={(e) => setLocalSiteContent({...localSiteContent, bioHeroTitle1: e.target.value})} className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white outline-none" />
                             </div>
                             <div>
                                 <label className="block text-xs font-medium text-zinc-500 mb-1">Título 2 (Color)</label>
-                                <input type="text" value={siteContent.bioHeroTitle2} onChange={(e) => setSiteContent({...siteContent, bioHeroTitle2: e.target.value})} className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white outline-none" />
+                                <input type="text" value={localSiteContent.bioHeroTitle2} onChange={(e) => setLocalSiteContent({...localSiteContent, bioHeroTitle2: e.target.value})} className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white outline-none" />
                             </div>
                         </div>
                         <div>
                             <label className="block text-xs font-medium text-zinc-500 mb-1">Descripción</label>
-                            <textarea rows={3} value={siteContent.bioHeroDescription} onChange={(e) => setSiteContent({...siteContent, bioHeroDescription: e.target.value})} className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white outline-none" />
+                            <textarea rows={3} value={localSiteContent.bioHeroDescription} onChange={(e) => setLocalSiteContent({...localSiteContent, bioHeroDescription: e.target.value})} className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white outline-none" />
                         </div>
                     </div>
 
@@ -218,8 +285,8 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                             <label className="block text-sm font-medium text-zinc-400 mb-1">Correo Electrónico</label>
                             <input 
                                 type="email" 
-                                value={contactInfo.email}
-                                onChange={(e) => setContactInfo({...contactInfo, email: e.target.value})}
+                                value={localContactInfo.email}
+                                onChange={(e) => setLocalContactInfo({...localContactInfo, email: e.target.value})}
                                 className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:ring-1 focus:ring-[#ccff00] focus:border-transparent outline-none text-white"
                             />
                         </div>
@@ -227,8 +294,8 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                             <label className="block text-sm font-medium text-zinc-400 mb-1">Teléfono (WhatsApp)</label>
                             <input 
                                 type="text" 
-                                value={contactInfo.phone}
-                                onChange={(e) => setContactInfo({...contactInfo, phone: e.target.value})}
+                                value={localContactInfo.phone}
+                                onChange={(e) => setLocalContactInfo({...localContactInfo, phone: e.target.value})}
                                 className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:ring-1 focus:ring-[#ccff00] focus:border-transparent outline-none text-white"
                             />
                         </div>
@@ -236,8 +303,8 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                             <label className="block text-sm font-medium text-zinc-400 mb-1">Dirección Comercial</label>
                             <input 
                                 type="text" 
-                                value={contactInfo.address}
-                                onChange={(e) => setContactInfo({...contactInfo, address: e.target.value})}
+                                value={localContactInfo.address}
+                                onChange={(e) => setLocalContactInfo({...localContactInfo, address: e.target.value})}
                                 className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:ring-1 focus:ring-[#ccff00] focus:border-transparent outline-none text-white"
                             />
                         </div>
@@ -245,8 +312,8 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                             <label className="block text-sm font-medium text-zinc-400 mb-1">Instagram</label>
                             <input 
                                 type="text" 
-                                value={contactInfo.instagram}
-                                onChange={(e) => setContactInfo({...contactInfo, instagram: e.target.value})}
+                                value={localContactInfo.instagram}
+                                onChange={(e) => setLocalContactInfo({...localContactInfo, instagram: e.target.value})}
                                 className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:ring-1 focus:ring-[#ccff00] focus:border-transparent outline-none text-white"
                             />
                         </div>
@@ -266,16 +333,16 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                                 <Banknote className="w-5 h-5 text-zinc-400" /> Transferencia Bancaria
                             </h3>
                             <label className="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" checked={paymentConfig.transfer.enabled} onChange={() => setPaymentConfig({...paymentConfig, transfer: {...paymentConfig.transfer, enabled: !paymentConfig.transfer.enabled}})} className="sr-only peer" />
+                                <input type="checkbox" checked={localPaymentConfig.transfer.enabled} onChange={() => setLocalPaymentConfig({...localPaymentConfig, transfer: {...localPaymentConfig.transfer, enabled: !localPaymentConfig.transfer.enabled}})} className="sr-only peer" />
                                 <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#ccff00]"></div>
                             </label>
                         </div>
-                        {paymentConfig.transfer.enabled && (
+                        {localPaymentConfig.transfer.enabled && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <input type="text" placeholder="Nombre Banco" value={paymentConfig.transfer.bankName} onChange={(e) => setPaymentConfig({...paymentConfig, transfer: {...paymentConfig.transfer, bankName: e.target.value}})} className="bg-black/50 border border-white/10 p-2 rounded text-white text-sm" />
-                                <input type="text" placeholder="Alias (CBU)" value={paymentConfig.transfer.alias} onChange={(e) => setPaymentConfig({...paymentConfig, transfer: {...paymentConfig.transfer, alias: e.target.value}})} className="bg-black/50 border border-white/10 p-2 rounded text-white text-sm" />
-                                <input type="text" placeholder="Titular" value={paymentConfig.transfer.holderName} onChange={(e) => setPaymentConfig({...paymentConfig, transfer: {...paymentConfig.transfer, holderName: e.target.value}})} className="bg-black/50 border border-white/10 p-2 rounded text-white text-sm" />
-                                <input type="text" placeholder="CBU numérico" value={paymentConfig.transfer.cbu} onChange={(e) => setPaymentConfig({...paymentConfig, transfer: {...paymentConfig.transfer, cbu: e.target.value}})} className="bg-black/50 border border-white/10 p-2 rounded text-white text-sm" />
+                                <input type="text" placeholder="Nombre Banco" value={localPaymentConfig.transfer.bankName} onChange={(e) => setLocalPaymentConfig({...localPaymentConfig, transfer: {...localPaymentConfig.transfer, bankName: e.target.value}})} className="bg-black/50 border border-white/10 p-2 rounded text-white text-sm" />
+                                <input type="text" placeholder="Alias (CBU)" value={localPaymentConfig.transfer.alias} onChange={(e) => setLocalPaymentConfig({...localPaymentConfig, transfer: {...localPaymentConfig.transfer, alias: e.target.value}})} className="bg-black/50 border border-white/10 p-2 rounded text-white text-sm" />
+                                <input type="text" placeholder="Titular" value={localPaymentConfig.transfer.holderName} onChange={(e) => setLocalPaymentConfig({...localPaymentConfig, transfer: {...localPaymentConfig.transfer, holderName: e.target.value}})} className="bg-black/50 border border-white/10 p-2 rounded text-white text-sm" />
+                                <input type="text" placeholder="CBU numérico" value={localPaymentConfig.transfer.cbu} onChange={(e) => setLocalPaymentConfig({...localPaymentConfig, transfer: {...localPaymentConfig.transfer, cbu: e.target.value}})} className="bg-black/50 border border-white/10 p-2 rounded text-white text-sm" />
                             </div>
                         )}
                     </div>
@@ -285,14 +352,14 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                         <div className="p-4 bg-black/20 rounded-xl border border-white/5 flex items-center justify-between">
                             <h3 className="font-bold text-white flex items-center gap-2"><CreditCard className="w-5 h-5 text-zinc-400" /> Tarjetas</h3>
                             <label className="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" checked={paymentConfig.card.enabled} onChange={() => setPaymentConfig({...paymentConfig, card: {...paymentConfig.card, enabled: !paymentConfig.card.enabled}})} className="sr-only peer" />
+                                <input type="checkbox" checked={localPaymentConfig.card.enabled} onChange={() => setLocalPaymentConfig({...localPaymentConfig, card: {...localPaymentConfig.card, enabled: !localPaymentConfig.card.enabled}})} className="sr-only peer" />
                                 <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#ccff00]"></div>
                             </label>
                         </div>
                         <div className="p-4 bg-black/20 rounded-xl border border-white/5 flex items-center justify-between">
                             <h3 className="font-bold text-white flex items-center gap-2"><Wallet className="w-5 h-5 text-zinc-400" /> Efectivo</h3>
                             <label className="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" checked={paymentConfig.cash.enabled} onChange={() => setPaymentConfig({...paymentConfig, cash: {...paymentConfig.cash, enabled: !paymentConfig.cash.enabled}})} className="sr-only peer" />
+                                <input type="checkbox" checked={localPaymentConfig.cash.enabled} onChange={() => setLocalPaymentConfig({...localPaymentConfig, cash: {...localPaymentConfig.cash, enabled: !localPaymentConfig.cash.enabled}})} className="sr-only peer" />
                                 <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#ccff00]"></div>
                             </label>
                         </div>
