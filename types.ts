@@ -57,7 +57,6 @@ export interface CartItem extends Product {
   selectedPresentation?: string;
 }
 
-// --- ACTUALIZACIÓN AQUÍ ---
 export interface SiteContent {
   sportsHeroTitle1: string;
   sportsHeroTitle2: string;
@@ -84,8 +83,8 @@ export interface SiteContent {
   bioHeroBg?: string;
 
   // Nuevos campos de configuración de descuentos
-  resellerDiscount: number; // Porcentaje (ej: 30)
-  globalOfferDiscount: number; // Porcentaje (ej: 10) para ofertas eventuales
+  resellerDiscount: number; 
+  globalOfferDiscount: number; 
 }
 
 export interface ContactInfo {
