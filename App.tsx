@@ -44,6 +44,7 @@ function App() {
   const [toastMessage, setToastMessage] = useState('');
   const lastNotifiedMsgId = useRef<string | null>(null);
 
+  // --- LÓGICA DE NOTIFICACIONES ---
   useEffect(() => {
       if (loggedReseller && currentView === 'reseller') {
           const updatedUser = resellers.find(r => r.id === loggedReseller.id);
@@ -70,6 +71,7 @@ function App() {
       });
   }, [products, activeBrand, selectedCategory]);
 
+  // --- MANEJO DE LOGIN UNIFICADO (Email/Pass) ---
   const handleUnifiedLogin = (type: 'admin' | 'reseller' | 'client', data?: any) => {
       if (type === 'admin') {
           setCurrentView('admin');
@@ -80,6 +82,27 @@ function App() {
           setCurrentUser(data);
           setCurrentView('shop');
           setIsCartOpen(true);
+      }
+  };
+
+  // --- MANEJO DE LOGIN CON GOOGLE (Inteligente) ---
+  const handleGoogleAuthLogic = (googleUser: User) => {
+      // 1. Verificar si el email de Google coincide con un Revendedor
+      const foundReseller = resellers.find(r => r.email.toLowerCase() === googleUser.email.toLowerCase() && r.active);
+
+      if (foundReseller) {
+          // ES REVENDEDOR -> Redirigir al Panel de Revendedores
+          setLoggedReseller(foundReseller);
+          setCurrentView('reseller');
+          setIsCartOpen(false); // Cerramos el carrito porque entra a su panel
+          
+          setToastMessage(`Bienvenido Partner: ${foundReseller.name}`);
+          setShowToast(true);
+          setTimeout(() => setShowToast(false), 3000);
+      } else {
+          // ES CLIENTE NORMAL -> Se queda en la Tienda / Carrito
+          setCurrentUser(googleUser);
+          // No cambiamos la vista, sigue en el proceso de compra
       }
   };
 
@@ -416,7 +439,7 @@ function App() {
             paymentConfig={paymentConfig}
             currentUser={currentUser}
             onLoginRequest={() => { setIsCartOpen(false); setCurrentView('login'); }}
-            onClientLogin={(user) => setCurrentUser(user)}
+            onClientLogin={handleGoogleAuthLogic} // <-- USAMOS LA NUEVA LOGICA
             onOrderCreate={handleDirectOrder} 
         />
 
