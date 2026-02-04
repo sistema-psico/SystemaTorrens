@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { SiteContent, ContactInfo, PaymentConfig, Brand } from '../../types';
+import { SiteContent, ContactInfo, PaymentConfig } from '../../types';
 import { 
-    Upload, Image, Banknote, CreditCard, Wallet, Save, Loader2, Percent, Users, Link, Copy, Check
+    Upload, Image, Banknote, CreditCard, Wallet, Save, Loader2, Percent, Users
 } from 'lucide-react';
 import Toast, { ToastType } from '../Toast';
 
@@ -26,7 +26,6 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
     const [isSaving, setIsSaving] = useState(false);
     const [toast, setToast] = useState<{ show: boolean; message: string; type: ToastType } | null>(null);
     const [hasChanges, setHasChanges] = useState(false);
-    const [copiedLink, setCopiedLink] = useState<string | null>(null);
 
     useEffect(() => {
         setLocalSiteContent(siteContent);
@@ -67,22 +66,6 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
         }
     };
 
-    const copyToClipboard = (text: string, label: string) => {
-        navigator.clipboard.writeText(text).then(() => {
-            setCopiedLink(label);
-            setToast({ show: true, message: `Enlace copiado al portapapeles`, type: 'success' });
-            setTimeout(() => setCopiedLink(null), 3000);
-        });
-    };
-
-    // NOMBRES CORREGIDOS (PHISIS)
-    const brandLinks: { label: string; brandParam: Brand; color: string }[] = [
-        { label: 'In Forma', brandParam: 'informa', color: 'text-[#ccff00] border-[#ccff00]/30' },
-        { label: 'Phisis Nutricosmetica', brandParam: 'phisis', color: 'text-emerald-400 border-emerald-400/30' },
-        { label: 'Phisis Fragancias', brandParam: 'iqual', color: 'text-indigo-400 border-indigo-400/30' },
-        { label: 'BioFarma Natural', brandParam: 'biofarma', color: 'text-blue-400 border-blue-400/30' },
-    ];
-
     return (
         <div className="animate-fade-in space-y-12 pb-32 relative">
              {toast?.show && (
@@ -104,38 +87,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                 </button>
             </div>
 
-             {/* --- SECCIÓN: ENLACES DIRECTOS --- */}
-             <div>
-                <h1 className="text-3xl font-black text-white italic mb-6 flex items-center gap-3">
-                    <Link className="w-8 h-8 text-[#ccff00]" /> ENLACES <span className="text-[#ccff00]">DIRECTOS</span>
-                </h1>
-                <div className="bg-zinc-900/40 backdrop-blur-md p-8 rounded-2xl shadow-xl border border-white/5">
-                    <p className="text-zinc-400 mb-6">Genera enlaces para compartir que lleven a los clientes directamente a una sección específica de la tienda.</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {brandLinks.map((link) => {
-                            const url = `${window.location.origin}/?brand=${link.brandParam}`;
-                            const isCopied = copiedLink === link.label;
-                            return (
-                                <div key={link.brandParam} className={`p-4 bg-black/40 rounded-xl border ${link.color} flex justify-between items-center group`}>
-                                    <div>
-                                        <h3 className={`font-bold ${link.color.split(' ')[0]}`}>{link.label}</h3>
-                                        <p className="text-zinc-500 text-xs truncate max-w-[250px]">{url}</p>
-                                    </div>
-                                    <button 
-                                        onClick={() => copyToClipboard(url, link.label)}
-                                        className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-zinc-300 hover:text-white transition-colors flex items-center gap-2"
-                                    >
-                                        {isCopied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
-                                        <span className="text-xs font-bold">{isCopied ? 'Copiado!' : 'Copiar Link'}</span>
-                                    </button>
-                                </div>
-                            )
-                        })}
-                    </div>
-                </div>
-             </div>
-
-             {/* SECCIÓN: CONTROL DE PRECIOS */}
+             {/* NUEVA SECCIÓN: CONTROL DE PRECIOS */}
              <div>
                 <h1 className="text-3xl font-black text-white italic mb-6">POLÍTICA DE <span className="text-[#ccff00]">PRECIOS</span></h1>
                 <div className="bg-zinc-900/40 backdrop-blur-md p-8 rounded-2xl shadow-xl border border-white/5 grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -143,7 +95,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                     {/* Descuento Revendedores */}
                     <div className="p-6 bg-blue-900/10 border border-blue-500/30 rounded-xl relative overflow-hidden group">
                         <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                            <Users className="w-24 h-24 text-blue-500" />
+                            <Percent className="w-24 h-24 text-blue-500" />
                         </div>
                         <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
                             <Users className="w-5 h-5 text-blue-400" /> Margen Revendedores
@@ -199,7 +151,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                     {[
                         { label: 'In Forma', key: 'logoInforma', color: 'bg-[#ccff00]' },
                         { label: 'Phisis', key: 'logoPhisis', color: 'bg-emerald-500' },
-                        { label: 'Iqual', key: 'logoIqual', color: 'bg-indigo-500' },
+                        { label: 'Phisis Fragancias', key: 'logoIqual', color: 'bg-indigo-500' },
                         { label: 'BioFarma', key: 'logoBiofarma', color: 'bg-blue-500' },
                     ].map((brand) => (
                         <div key={brand.key} className="bg-zinc-900/40 backdrop-blur-md p-4 rounded-xl border border-white/5 shadow-xl space-y-4">
@@ -244,7 +196,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                     {[
                         { label: 'Fondo In Forma', key: 'sportsHeroBg', color: 'bg-[#ccff00]' },
                         { label: 'Fondo Phisis', key: 'beautyHeroBg', color: 'bg-emerald-500' },
-                        { label: 'Fondo Iqual', key: 'fragranceHeroBg', color: 'bg-indigo-500' },
+                        { label: 'Fondo Phisis Fragancias', key: 'fragranceHeroBg', color: 'bg-indigo-500' },
                         { label: 'Fondo BioFarma', key: 'bioHeroBg', color: 'bg-blue-500' },
                     ].map((brand) => (
                         <div key={brand.key} className="bg-zinc-900/40 backdrop-blur-md p-4 rounded-xl border border-white/5 shadow-xl space-y-4">
@@ -330,7 +282,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
 
                     {/* Iqual */}
                     <div className="bg-zinc-900/40 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-white/5 space-y-4">
-                        <h3 className="text-indigo-500 font-bold uppercase tracking-widest text-sm border-b border-white/10 pb-2">Sección Fragancias (Iqual)</h3>
+                        <h3 className="text-indigo-500 font-bold uppercase tracking-widest text-sm border-b border-white/10 pb-2">Sección Phisis Fragancias</h3>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-xs font-medium text-zinc-500 mb-1">Título 1</label>
