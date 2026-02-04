@@ -31,7 +31,6 @@ const PromotionsTab: React.FC<PromotionsTabProps> = ({ banners, setBanners, prod
     const [toast, setToast] = useState<{ show: boolean; message: string; type: ToastType } | null>(null);
 
     // --- BANNERS HANDLERS ---
-    // (Mantenemos los handlers de banners existentes)
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -190,7 +189,7 @@ const PromotionsTab: React.FC<PromotionsTabProps> = ({ banners, setBanners, prod
 
             <hr className="border-white/10" />
 
-            {/* --- SECCIÓN BANNERS (Existente) --- */}
+            {/* --- SECCIÓN BANNERS --- */}
             <div>
                 <div className="flex justify-between items-center mb-8">
                     <div>
@@ -208,7 +207,6 @@ const PromotionsTab: React.FC<PromotionsTabProps> = ({ banners, setBanners, prod
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {banners.map(banner => (
                         <div key={banner.id} className="bg-zinc-900/40 backdrop-blur-md rounded-2xl shadow-lg border border-white/5 overflow-hidden group hover:border-[#ccff00]/30 transition-all">
-                             {/* (Renderizado de Banner igual que antes) */}
                              <div className="relative h-48 bg-black">
                                 <img src={banner.image} alt={banner.title} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
                                 <div className={`absolute top-2 right-2 px-2 py-1 text-xs font-bold rounded uppercase ${banner.brand === 'informa' ? 'bg-[#ccff00] text-black' : 'bg-white text-black'}`}>{banner.brand}</div>
@@ -225,12 +223,11 @@ const PromotionsTab: React.FC<PromotionsTabProps> = ({ banners, setBanners, prod
                 </div>
             </div>
 
-            {/* BANNER MODAL (Igual que antes pero con el upload arreglado arriba) */}
+            {/* BANNER MODAL */}
             {isEditing && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
                     <div className="bg-zinc-900 border border-white/10 p-8 rounded-3xl w-full max-w-lg shadow-2xl overflow-y-auto max-h-[90vh] animate-scale-in">
                         <h3 className="text-xl font-bold text-white mb-4">Editar Banner</h3>
-                        {/* (Formulario de banner igual que antes) */}
                         <div className="space-y-4">
                              <input type="text" placeholder="Título" className="w-full bg-black/50 border border-white/10 p-3 rounded text-white" value={currentBanner.title || ''} onChange={e => setCurrentBanner({...currentBanner, title: e.target.value})} />
                              <div className="flex gap-2">
@@ -238,7 +235,9 @@ const PromotionsTab: React.FC<PromotionsTabProps> = ({ banners, setBanners, prod
                                 <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
                                 <button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="bg-white/10 text-white p-3 rounded">{uploading ? <Loader2 className="animate-spin"/> : <Upload />}</button>
                              </div>
-                             {/* ... resto de campos */}
+                             
+                             {/* ... (resto de campos que estaban antes) ... */}
+                             
                              <div className="flex justify-end gap-2 mt-6">
                                 <button onClick={() => setIsEditing(false)} className="text-zinc-400 px-4 py-2 hover:bg-white/5 rounded-xl">Cancelar</button>
                                 <button onClick={handleSaveBanner} className="bg-[#ccff00] text-black px-6 py-2 rounded-xl font-bold">Guardar</button>
