@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ShoppingCart, Menu, X, Sparkles, Fingerprint, Activity } from 'lucide-react';
 import { CartItem, User, Brand, SiteContent } from '../types';
@@ -138,7 +137,7 @@ const Navbar: React.FC<NavbarProps> = ({ cart, onCartClick, activeBrand, onBrand
             )}
           </div>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Navigation - NOMBRES ACTUALIZADOS */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-2">
               <button 
@@ -149,7 +148,7 @@ const Navbar: React.FC<NavbarProps> = ({ cart, onCartClick, activeBrand, onBrand
                   : 'text-gray-400 hover:text-white hover:bg-black/40'
                 }`}
               >
-                DEPORTES
+                In Forma
               </button>
               <button 
                 onClick={() => onBrandSwitch('phisis')}
@@ -159,7 +158,7 @@ const Navbar: React.FC<NavbarProps> = ({ cart, onCartClick, activeBrand, onBrand
                   : 'text-gray-400 hover:text-emerald-900 hover:bg-emerald-50'
                 }`}
               >
-                NUTRICOSMÉTICA
+                Fhisis Nutricosmetica
               </button>
               <button 
                 onClick={() => onBrandSwitch('iqual')}
@@ -169,7 +168,7 @@ const Navbar: React.FC<NavbarProps> = ({ cart, onCartClick, activeBrand, onBrand
                   : 'text-gray-400 hover:text-white hover:bg-slate-800'
                 }`}
               >
-                FRAGANCIAS
+                Fhisis Fragancias
               </button>
               <button 
                 onClick={() => onBrandSwitch('biofarma')}
@@ -179,7 +178,7 @@ const Navbar: React.FC<NavbarProps> = ({ cart, onCartClick, activeBrand, onBrand
                   : 'text-gray-400 hover:text-blue-900 hover:bg-blue-50'
                 }`}
               >
-                SALUD INTEGRAL
+                BioFarma Natural
               </button>
             </div>
           </div>
@@ -228,7 +227,7 @@ const Navbar: React.FC<NavbarProps> = ({ cart, onCartClick, activeBrand, onBrand
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu - NOMBRES ACTUALIZADOS */}
       {isMobileMenuOpen && (
         <div className={`md:hidden ${
             isSports ? 'bg-zinc-900' : isIqual ? 'bg-slate-900' : 'bg-white border-b border-gray-100'
@@ -240,7 +239,7 @@ const Navbar: React.FC<NavbarProps> = ({ cart, onCartClick, activeBrand, onBrand
                     isSports ? 'text-[#ccff00] bg-zinc-800' : 'text-gray-500'
                 }`}
               >
-                LÍNEA DEPORTIVA
+                In Forma
               </button>
               <button 
                 onClick={() => { onBrandSwitch('phisis'); setIsMobileMenuOpen(false); }}
@@ -248,7 +247,7 @@ const Navbar: React.FC<NavbarProps> = ({ cart, onCartClick, activeBrand, onBrand
                     isPhisis ? 'text-emerald-700 bg-emerald-50' : 'text-gray-500'
                 }`}
               >
-                LÍNEA NUTRICOSMÉTICA
+                Fhisis Nutricosmetica
               </button>
               <button 
                 onClick={() => { onBrandSwitch('iqual'); setIsMobileMenuOpen(false); }}
@@ -256,7 +255,7 @@ const Navbar: React.FC<NavbarProps> = ({ cart, onCartClick, activeBrand, onBrand
                     isIqual ? 'text-indigo-400 bg-slate-800' : 'text-gray-500'
                 }`}
               >
-                FRAGANCIAS IQUAL
+                Fhisis Fragancias
               </button>
               <button 
                 onClick={() => { onBrandSwitch('biofarma'); setIsMobileMenuOpen(false); }}
@@ -264,7 +263,7 @@ const Navbar: React.FC<NavbarProps> = ({ cart, onCartClick, activeBrand, onBrand
                     isBio ? 'text-blue-900 bg-blue-50' : 'text-gray-500'
                 }`}
               >
-                SALUD BIOFARMA
+                BioFarma Natural
               </button>
           </div>
         </div>
