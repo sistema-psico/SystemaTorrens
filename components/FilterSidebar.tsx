@@ -41,11 +41,11 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   const textSub = isSports ? 'text-gray-400' : isIqual ? 'text-slate-400' : 'text-gray-500';
   const accentColor = isSports ? 'text-[#ccff00]' : isIqual ? 'text-indigo-400' : isBio ? 'text-blue-700' : 'text-emerald-700';
   
-  // NOMBRES ACTUALIZADOS DE LAS MARCAS EN EL FILTRO
+  // NOMBRES CORREGIDOS (PHISIS)
   const brands: { id: Brand; label: string }[] = [
     { id: 'informa', label: 'In Forma' },
-    { id: 'phisis', label: 'Fhisis Nutricosmetica' },
-    { id: 'iqual', label: 'Fhisis Fragancias' },
+    { id: 'phisis', label: 'Phisis Nutricosmetica' },
+    { id: 'iqual', label: 'Phisis Fragancias' },
     { id: 'biofarma', label: 'BioFarma Natural' },
   ];
 
