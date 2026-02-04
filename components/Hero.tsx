@@ -126,8 +126,10 @@ const Hero: React.FC<HeroProps> = ({ activeBrand, banners, products, onAddBundle
                     </p>
                 </div>
 
-                {/* --- CAMBIO AQUÍ: NOMBRES DE LOS BOTONES --- */}
+                {/* --- BOTONES SUPERIORES MODIFICADOS --- */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-16 relative z-10 animate-fade-in" style={{animationDelay: '0.6s'}}>
+                    
+                    {/* Botón 1: In Forma (Ya estaba correcto) */}
                     <a href="#shop" className={`group p-6 ${activeBrand === 'informa' ? 'bg-[#ccff00]/10 border-[#ccff00]' : 'bg-white/5 border-white/10'} backdrop-blur-md rounded-2xl border hover:border-[#ccff00]/50 transition-all duration-300 relative overflow-hidden`}>
                         <div className={`absolute inset-0 bg-gradient-to-br from-[#ccff00]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
                         <Dumbbell className={`w-8 h-8 mb-4 ${activeBrand === 'informa' ? 'text-[#ccff00]' : 'text-gray-400 group-hover:text-[#ccff00]'} transition-colors`} />
@@ -135,6 +137,7 @@ const Hero: React.FC<HeroProps> = ({ activeBrand, banners, products, onAddBundle
                         <p className="text-sm text-gray-500 font-medium flex items-center gap-2">Explorar <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" /></p>
                     </a>
 
+                    {/* Botón 2: Antes "Nutricosmética", ahora "Fhisis Nutricosmetica" */}
                     <a href="#shop" className={`group p-6 ${activeBrand === 'phisis' ? 'bg-emerald-500/10 border-emerald-400' : 'bg-white/60 border-stone-200'} backdrop-blur-md rounded-2xl border hover:border-emerald-300 transition-all duration-300 relative overflow-hidden`}>
                         <div className={`absolute inset-0 bg-gradient-to-br from-emerald-400/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
                         <Sparkles className={`w-8 h-8 mb-4 ${activeBrand === 'phisis' ? 'text-emerald-600' : 'text-stone-400 group-hover:text-emerald-600'} transition-colors`} />
@@ -142,6 +145,7 @@ const Hero: React.FC<HeroProps> = ({ activeBrand, banners, products, onAddBundle
                         <p className="text-sm text-stone-500 font-medium flex items-center gap-2">Explorar <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" /></p>
                     </a>
 
+                    {/* Botón 3: Antes "Fragancias", ahora "Fhisis Fragancias" */}
                     <a href="#shop" className={`group p-6 ${activeBrand === 'iqual' ? 'bg-indigo-500/10 border-indigo-400' : 'bg-white/5 border-white/10'} backdrop-blur-md rounded-2xl border hover:border-indigo-500/50 transition-all duration-300 relative overflow-hidden`}>
                          <div className={`absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
                         <Droplet className={`w-8 h-8 mb-4 ${activeBrand === 'iqual' ? 'text-indigo-400' : 'text-gray-400 group-hover:text-indigo-400'} transition-colors`} />
@@ -149,6 +153,7 @@ const Hero: React.FC<HeroProps> = ({ activeBrand, banners, products, onAddBundle
                         <p className="text-sm text-gray-500 font-medium flex items-center gap-2">Explorar <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" /></p>
                     </a>
 
+                    {/* Botón 4: Antes "Salud Integral", ahora "BioFarma Natural" */}
                     <a href="#shop" className={`group p-6 ${activeBrand === 'biofarma' ? 'bg-blue-500/10 border-blue-400' : 'bg-white/60 border-stone-200'} backdrop-blur-md rounded-2xl border hover:border-blue-300 transition-all duration-300 relative overflow-hidden`}>
                          <div className={`absolute inset-0 bg-gradient-to-br from-blue-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
                         <Leaf className={`w-8 h-8 mb-4 ${activeBrand === 'biofarma' ? 'text-blue-600' : 'text-stone-400 group-hover:text-blue-600'} transition-colors`} />
