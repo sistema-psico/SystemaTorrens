@@ -33,7 +33,7 @@ function App() {
   const [adminClients, setAdminClients] = useFirestore<Client[]>('adminClients', initialAdminClients);
   const [siteContent, setSiteContent] = useFirestore<SiteContent>('siteContent', initialSiteContent);
   const [socialReviews, setSocialReviews] = useFirestore<SocialReview[]>('socialReviews', initialSocialReviews);
-  const [coupons, setCoupons] = useFirestore<Coupon[]>('coupons', initialCoupons);
+  const [coupons, setCoupons] = useFirestore<Coupon[]>('coupons', initialCoupons); // HOOK CUPONES
   
   const [directOrders, setDirectOrders] = useFirestore<ResellerOrder[]>('directOrders', []);
   const [adminSales, setAdminSales] = useFirestore<Sale[]>('adminSales', []);
@@ -276,7 +276,7 @@ function App() {
             setDirectOrders={setDirectOrders}
             adminSales={adminSales} 
             setAdminSales={setAdminSales}
-            coupons={coupons}
+            coupons={coupons} // Pasamos los cupones
             setCoupons={setCoupons}
         />
       );
