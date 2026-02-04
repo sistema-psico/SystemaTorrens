@@ -12,10 +12,19 @@ import Login from './components/Login';
 import SocialProof from './components/SocialProof';
 import InstallAppButton from './components/InstallAppButton';
 import { initialProducts, initialContactInfo, initialBanners, initialResellers, initialAdminClients, initialSiteContent, initialPaymentConfig, initialSocialReviews } from './data';
-import { Product, CartItem, Category, ContactInfo, Banner, Reseller, Client, SiteContent, User, PaymentConfig, SocialReview, Brand, PeptoneFormula, ResellerOrder } from './types';
+import { Product, CartItem, Category, ContactInfo, Banner, Reseller, Client, SiteContent, User, PaymentConfig, SocialReview, Brand, PeptoneFormula, ResellerOrder, Sale } from './types';
 import { Sparkles, SlidersHorizontal, Lock, MapPin, Phone, Mail, Instagram, Bell } from 'lucide-react';
 
+// Importaciones necesarias para la persistencia
 import { useFirestore } from './hooks/useFirestore';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { auth } from './lib/firebase';
+
+// Definimos los emails de admin aquí también para la verificación de sesión
+const ADMIN_EMAILS = [
+    'edur900@gmail.com', 
+    'gabrieletorrens@gmail.com'     
+];
 
 function App() {
   const [products, setProducts] = useFirestore<Product[]>('products', initialProducts);
@@ -29,6 +38,8 @@ function App() {
   
   // Unificamos todo en directOrders (tanto web como manuales del admin)
   const [directOrders, setDirectOrders] = useFirestore<ResellerOrder[]>('directOrders', []);
+  
+  const [adminSales, setAdminSales] = useFirestore<Sale[]>('adminSales', []);
   
   const [currentView, setCurrentView] = useState<'shop' | 'admin' | 'reseller' | 'login'>('shop');
 
@@ -53,10 +64,47 @@ function App() {
   const [toastMessage, setToastMessage] = useState('');
   const lastNotifiedMsgId = useRef<string | null>(null);
 
+  // --- 1. PERSISTENCIA DE ADMINISTRADOR (Firebase Auth) ---
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user && ADMIN_EMAILS.includes(user.email || '')) {
+        // Si Firebase detecta un usuario y es admin, restauramos la vista
+        console.log("Sesión de Admin restaurada:", user.email);
+        setCurrentView('admin');
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // --- 2. PERSISTENCIA DE REVENDEDOR (LocalStorage) ---
+  useEffect(() => {
+    // Solo intentamos restaurar si ya tenemos la lista de revendedores cargada
+    if (resellers.length > 0) {
+      const savedResellerId = localStorage.getItem('loggedResellerId');
+      if (savedResellerId) {
+        const found = resellers.find(r => r.id === savedResellerId && r.active);
+        if (found) {
+          console.log("Sesión de Revendedor restaurada:", found.name);
+          setLoggedReseller(found);
+          setCurrentView('reseller');
+        } else {
+          // Si el ID guardado ya no es válido o está inactivo, limpiamos
+          localStorage.removeItem('loggedResellerId');
+        }
+      }
+    }
+  }, [resellers]); // Se ejecuta cada vez que se actualiza la lista de revendedores
+
   useEffect(() => {
       if (loggedReseller && currentView === 'reseller') {
           const updatedUser = resellers.find(r => r.id === loggedReseller.id);
           if (updatedUser) {
+              // Actualizar el estado local si la data en la DB cambia
+              // (Importante para ver cambios en stock/mensajes en tiempo real)
+              if (JSON.stringify(updatedUser) !== JSON.stringify(loggedReseller)) {
+                  setLoggedReseller(updatedUser);
+              }
+
               const lastMsg = updatedUser.messages[updatedUser.messages.length - 1];
               if (lastMsg && lastMsg.sender === 'admin' && !lastMsg.read && lastMsg.id !== lastNotifiedMsgId.current) {
                   const isOrderUpdate = lastMsg.content.includes('pedido');
@@ -82,14 +130,28 @@ function App() {
   const handleUnifiedLogin = (type: 'admin' | 'reseller' | 'client', data?: any) => {
       if (type === 'admin') {
           setCurrentView('admin');
+          // No necesitamos guardar nada manual aquí, Firebase lo maneja
       } else if (type === 'reseller' && data) {
           setLoggedReseller(data);
           setCurrentView('reseller');
+          // Guardamos el ID en localStorage para persistencia
+          localStorage.setItem('loggedResellerId', data.id);
       } else if (type === 'client' && data) {
           setCurrentUser(data);
           setCurrentView('shop');
           setIsCartOpen(true);
       }
+  };
+
+  const handleLogoutAdmin = async () => {
+      await signOut(auth); // Cerrar sesión en Firebase
+      setCurrentView('shop');
+  };
+
+  const handleLogoutReseller = () => {
+      setLoggedReseller(null);
+      localStorage.removeItem('loggedResellerId'); // Limpiar localStorage
+      setCurrentView('shop');
   };
 
   const handleGoogleAuthLogic = (googleUser: User) => {
@@ -98,6 +160,7 @@ function App() {
       if (foundReseller) {
           setLoggedReseller(foundReseller);
           setCurrentView('reseller');
+          localStorage.setItem('loggedResellerId', foundReseller.id); // Guardar persistencia
           setIsCartOpen(false);
           
           setToastMessage(`Bienvenido Partner: ${foundReseller.name}`);
@@ -218,11 +281,13 @@ function App() {
             setResellers={setResellers}
             adminClients={adminClients}
             setAdminClients={setAdminClients}
-            onClose={() => setCurrentView('shop')}
+            onClose={handleLogoutAdmin} // Usamos la nueva función de logout
             siteContent={siteContent}
             setSiteContent={setSiteContent}
             directOrders={directOrders}
             setDirectOrders={setDirectOrders}
+            adminSales={adminSales} 
+            setAdminSales={setAdminSales}
         />
       );
   }
@@ -233,10 +298,7 @@ function App() {
             <ResellerPanel 
                 resellers={resellers}
                 setResellers={setResellers}
-                onClose={() => {
-                    setLoggedReseller(null);
-                    setCurrentView('shop');
-                }}
+                onClose={handleLogoutReseller} // Usamos la nueva función de logout
                 initialUser={loggedReseller}
                 products={products}
                 siteContent={siteContent}
