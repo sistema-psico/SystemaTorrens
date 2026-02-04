@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Product, Brand, Reseller } from '../../types';
+import { Product, Brand, Reseller, Category } from '../../types';
 import { 
     Search, Plus, Edit2, Trash2, Eye, EyeOff, Upload, Loader2, Image as ImageIcon
 } from 'lucide-react';
@@ -30,19 +30,34 @@ const InventoryTab: React.FC<InventoryTabProps> = ({ products, setProducts, rese
         setToast({ show: true, message, type });
     };
 
+    // Lista oficial de categorías para evitar errores de tipeo
+    const availableCategories: Category[] = [
+        'Alto Rendimiento', 
+        'Adelgazantes', 
+        'Energizantes', 
+        'Nutricosmética', 
+        'Cuidado Piel', 
+        'Creatina y BCAA',
+        'Fragancias', 
+        'Cuidado Corporal', 
+        'Facial', 
+        'Salud Integral', 
+        'Peptonas', 
+        'Revitalización', 
+        'Genética'
+    ];
+
     // --- HANDLERS ---
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Validar tamaño (ej: máx 2MB)
-        if (file.size > 2 * 1024 * 1024) {
-            showToast("La imagen es muy pesada (Máx 2MB)", 'error');
+        if (file.size > 5 * 1024 * 1024) { // 5MB max
+            showToast("La imagen es muy pesada (Máx 5MB)", 'error');
             return;
         }
 
-        // CORRECCIÓN AQUÍ: Se eliminó el segundo argumento 'products'
         const url = await uploadImage(file);
         
         if (url) {
@@ -163,6 +178,7 @@ const InventoryTab: React.FC<InventoryTabProps> = ({ products, setProducts, rese
                         <tr>
                             <th className="px-6 py-4">Producto</th>
                             <th className="px-6 py-4">Marca</th>
+                            <th className="px-6 py-4">Categoría</th>
                             <th className="px-6 py-4">Stock</th>
                             <th className="px-6 py-4">Precio</th>
                             <th className="px-6 py-4">Estado</th>
@@ -178,6 +194,9 @@ const InventoryTab: React.FC<InventoryTabProps> = ({ products, setProducts, rese
                                 </td>
                                 <td className="px-6 py-4">
                                     <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded ${product.brand === 'informa' ? 'bg-zinc-800 text-zinc-400' : product.brand === 'iqual' ? 'bg-indigo-900/40 text-indigo-300' : product.brand === 'biofarma' ? 'bg-blue-900/40 text-blue-300' : 'bg-emerald-900/40 text-emerald-300'}`}>{product.brand}</span>
+                                </td>
+                                <td className="px-6 py-4 text-zinc-400 text-xs">
+                                    {product.category}
                                 </td>
                                 <td className="px-6 py-4 text-zinc-300 font-mono">{product.stock}</td>
                                 <td className="px-6 py-4 text-[#ccff00] font-bold">${product.price.toLocaleString()}</td>
@@ -241,7 +260,7 @@ const InventoryTab: React.FC<InventoryTabProps> = ({ products, setProducts, rese
                                             {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                                         </button>
                                     </div>
-                                    <p className="text-[10px] text-zinc-600 mt-1">Formatos: JPG, PNG, WEBP (Máx 2MB)</p>
+                                    <p className="text-[10px] text-zinc-600 mt-1">Formatos: JPG, PNG, WEBP (Máx 5MB)</p>
                                 </div>
                             </div>
 
@@ -276,9 +295,19 @@ const InventoryTab: React.FC<InventoryTabProps> = ({ products, setProducts, rese
                                 </select>
                             </div>
 
+                            {/* CAMBIO AQUÍ: SE REEMPLAZA EL INPUT DE TEXTO POR UN SELECT */}
                             <div>
                                 <label className="block text-xs font-bold text-zinc-400 mb-1">Categoría</label>
-                                <input type="text" placeholder="Categoría" className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#ccff00]" value={currentProduct.category || ''} onChange={e=>setCurrentProduct({...currentProduct, category: e.target.value})} />
+                                <select
+                                    value={currentProduct.category || ''}
+                                    onChange={e => setCurrentProduct({...currentProduct, category: e.target.value})}
+                                    className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#ccff00]"
+                                >
+                                    <option value="">Seleccionar Categoría...</option>
+                                    {availableCategories.map(cat => (
+                                        <option key={cat} value={cat}>{cat}</option>
+                                    ))}
+                                </select>
                             </div>
 
                             <div>
