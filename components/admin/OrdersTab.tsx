@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Reseller, ResellerOrder, Message } from '../../types';
-import { Truck, CheckCircle, Clock, Trash2, Package, ChevronDown, ChevronUp, MessageCircle } from 'lucide-react';
+import { Truck, CheckCircle, Clock, Trash2, Package, ChevronDown, ChevronUp, MessageCircle, AlertTriangle } from 'lucide-react';
 
 interface OrdersTabProps {
     resellers: Reseller[];
@@ -22,8 +22,6 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ resellers, setResellers, directOr
         if (order.type === 'direct' && order.shippingInfo) {
             phone = order.shippingInfo.phone;
         } else {
-            // Si es revendedor, buscamos su teléfono en su perfil (no está en la orden, pero se podría agregar)
-            // Por ahora asumimos que el admin tiene el contacto.
             alert("Para revendedores, usa el chat interno.");
             return;
         }
@@ -38,7 +36,6 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ resellers, setResellers, directOr
         if (order.type === 'direct' && setDirectOrders) {
             const updatedOrders = directOrders.map(o => o.id === order.id ? { ...o, status: newStatus } : o);
             setDirectOrders(updatedOrders);
-            // Opcional: Enviar WhatsApp automático aquí si se desea
             return;
         }
 
@@ -104,9 +101,7 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ resellers, setResellers, directOr
         }
     };
     
-    // Unificar listas
     const resellerOrders = resellers.flatMap(r => r.orders.map(o => ({ ...o, resellerId: r.id, resellerName: r.name, type: 'reseller' })));
-    // Aseguramos que directOrders tenga el tipo correcto
     const webOrders = directOrders.map(o => ({ ...o, resellerName: 'Cliente Web', type: 'direct' }));
 
     const allOrders = [...webOrders, ...resellerOrders].filter(o => {
@@ -141,7 +136,9 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ resellers, setResellers, directOr
 
             <div className="grid gap-4">
                 {allOrders.map(order => (
-                    <div key={order.id} className="bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-2xl overflow-hidden hover:border-[#ccff00]/20 transition-colors">
+                    <div key={order.id} className={`bg-zinc-900/40 backdrop-blur-md border rounded-2xl overflow-hidden hover:border-[#ccff00]/20 transition-colors ${
+                        order.balanceDue && order.balanceDue > 0 ? 'border-red-500/50' : 'border-white/5'
+                    }`}>
                         <div className="p-6 flex flex-col md:flex-row justify-between items-center gap-6">
                             <div className="flex items-center gap-4 w-full md:w-auto">
                                 <div className={`p-4 rounded-xl border ${getStatusColor(order.status)}`}>
@@ -157,12 +154,18 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ resellers, setResellers, directOr
                                     <p className="text-zinc-400 text-sm flex items-center gap-2">
                                         <Clock className="w-3 h-3" /> {order.date} <span className="text-zinc-600">|</span> {order.items.length} items <span className="text-zinc-600">|</span> ID: {order.id}
                                     </p>
+                                    
+                                    {/* ALERTA DE PAGO PENDIENTE */}
+                                    {order.balanceDue && order.balanceDue > 0 && (
+                                        <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-red-500/20 text-red-400 text-xs font-bold rounded-lg border border-red-500/30 animate-pulse">
+                                            <AlertTriangle className="w-3 h-3" /> SALDO PENDIENTE: ${order.balanceDue.toLocaleString()}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             
                             {/* Actions & Status */}
                             <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-                                {/* Botón WhatsApp solo para pedidos directos */}
                                 {order.type === 'direct' && order.shippingInfo?.phone && (
                                     <button onClick={() => sendWhatsAppUpdate(order as any)} className="p-2 bg-green-500/10 hover:bg-green-500/20 text-green-500 rounded-lg transition-colors" title="Enviar WhatsApp al Cliente">
                                         <MessageCircle className="w-5 h-5" />
@@ -202,9 +205,23 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ resellers, setResellers, directOr
                                             </div>
                                         ))}
                                     </div>
-                                    <div className="mt-4 flex justify-between border-t border-white/10 pt-2">
-                                        <span className="text-white font-bold">Total</span>
-                                        <span className="text-[#ccff00] font-bold text-lg">${order.total.toLocaleString()}</span>
+                                    <div className="mt-4 flex flex-col gap-1 border-t border-white/10 pt-2">
+                                        <div className="flex justify-between">
+                                            <span className="text-zinc-500 text-sm">Total Pedido</span>
+                                            <span className="text-white font-bold text-sm">${order.total.toLocaleString()}</span>
+                                        </div>
+                                        {order.amountPaid && (
+                                            <div className="flex justify-between">
+                                                <span className="text-green-500 text-sm">Pagado</span>
+                                                <span className="text-green-500 font-bold text-sm">-${order.amountPaid.toLocaleString()}</span>
+                                            </div>
+                                        )}
+                                        {order.balanceDue && order.balanceDue > 0 && (
+                                            <div className="flex justify-between border-t border-white/10 pt-1 mt-1">
+                                                <span className="text-red-400 font-bold">Resta Pagar</span>
+                                                <span className="text-red-400 font-bold text-lg">${order.balanceDue.toLocaleString()}</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                                 
