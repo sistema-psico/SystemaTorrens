@@ -137,7 +137,7 @@ const Navbar: React.FC<NavbarProps> = ({ cart, onCartClick, activeBrand, onBrand
             )}
           </div>
 
-          {/* Desktop Navigation - NOMBRES ACTUALIZADOS */}
+          {/* Desktop Navigation - NOMBRES CORREGIDOS (PHISIS) */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-2">
               <button 
@@ -158,7 +158,7 @@ const Navbar: React.FC<NavbarProps> = ({ cart, onCartClick, activeBrand, onBrand
                   : 'text-gray-400 hover:text-emerald-900 hover:bg-emerald-50'
                 }`}
               >
-                Fhisis Nutricosmetica
+                Phisis Nutricosmetica
               </button>
               <button 
                 onClick={() => onBrandSwitch('iqual')}
@@ -168,7 +168,7 @@ const Navbar: React.FC<NavbarProps> = ({ cart, onCartClick, activeBrand, onBrand
                   : 'text-gray-400 hover:text-white hover:bg-slate-800'
                 }`}
               >
-                Fhisis Fragancias
+                Phisis Fragancias
               </button>
               <button 
                 onClick={() => onBrandSwitch('biofarma')}
@@ -227,7 +227,7 @@ const Navbar: React.FC<NavbarProps> = ({ cart, onCartClick, activeBrand, onBrand
         </div>
       </div>
 
-      {/* Mobile Menu - NOMBRES ACTUALIZADOS */}
+      {/* Mobile Menu - NOMBRES CORREGIDOS (PHISIS) */}
       {isMobileMenuOpen && (
         <div className={`md:hidden ${
             isSports ? 'bg-zinc-900' : isIqual ? 'bg-slate-900' : 'bg-white border-b border-gray-100'
