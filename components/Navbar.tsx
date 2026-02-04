@@ -247,7 +247,7 @@ const Navbar: React.FC<NavbarProps> = ({ cart, onCartClick, activeBrand, onBrand
                     isPhisis ? 'text-emerald-700 bg-emerald-50' : 'text-gray-500'
                 }`}
               >
-                Fhisis Nutricosmetica
+                Phisis Nutricosmetica
               </button>
               <button 
                 onClick={() => { onBrandSwitch('iqual'); setIsMobileMenuOpen(false); }}
@@ -255,7 +255,7 @@ const Navbar: React.FC<NavbarProps> = ({ cart, onCartClick, activeBrand, onBrand
                     isIqual ? 'text-indigo-400 bg-slate-800' : 'text-gray-500'
                 }`}
               >
-                Fhisis Fragancias
+                Phisis Fragancias
               </button>
               <button 
                 onClick={() => { onBrandSwitch('biofarma'); setIsMobileMenuOpen(false); }}
