@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { SiteContent, ContactInfo, PaymentConfig } from '../../types';
+import React, { useState, useEffect, useRef } from 'react';
+import { SiteContent, ContactInfo, PaymentConfig, Brand } from '../../types';
 import { 
-    Upload, Image, Banknote, CreditCard, Wallet, Save, Loader2, Percent, Users
+    Upload, Image, Banknote, CreditCard, Wallet, Save, Loader2, Percent, Users, Link, Copy, Check
 } from 'lucide-react';
 import Toast, { ToastType } from '../Toast';
+import { useImageUpload } from '../../hooks/useImageUpload'; // Importamos el hook de subida
 
 interface SettingsTabProps {
     siteContent: SiteContent;
@@ -26,6 +27,12 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
     const [isSaving, setIsSaving] = useState(false);
     const [toast, setToast] = useState<{ show: boolean; message: string; type: ToastType } | null>(null);
     const [hasChanges, setHasChanges] = useState(false);
+    const [copiedLink, setCopiedLink] = useState<string | null>(null);
+
+    // Hook para subir imágenes a la nube
+    const { uploadImage, uploading } = useImageUpload();
+    // Referencias para los inputs de archivo ocultos
+    const fileInputRefs = useRef<{[key: string]: HTMLInputElement | null}>({});
 
     useEffect(() => {
         setLocalSiteContent(siteContent);
@@ -40,9 +47,10 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
     const handleSaveAll = async () => {
         setIsSaving(true);
         try {
-            setSiteContent(localSiteContent);
-            setContactInfo(localContactInfo);
-            setPaymentConfig(localPaymentConfig);
+            // Usamos await para asegurar que se guarden antes de notificar
+            await setSiteContent(localSiteContent);
+            await setContactInfo(localContactInfo);
+            await setPaymentConfig(localPaymentConfig);
             
             await new Promise(resolve => setTimeout(resolve, 500));
             
@@ -55,16 +63,41 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
         }
     };
 
-    const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>, fieldKey: keyof SiteContent) => {
+    // Nueva función de subida usando Cloudinary
+    const handleCloudUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldKey: keyof SiteContent) => {
         const file = e.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setLocalSiteContent({ ...localSiteContent, [fieldKey]: reader.result as string });
-            };
-            reader.readAsDataURL(file);
+        if (!file) return;
+
+        // Validación de tamaño (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            setToast({ show: true, message: "La imagen es muy pesada (Máx 5MB)", type: 'error' });
+            return;
+        }
+
+        const url = await uploadImage(file);
+        
+        if (url) {
+            setLocalSiteContent(prev => ({ ...prev, [fieldKey]: url }));
+            setToast({ show: true, message: "Imagen subida exitosamente", type: 'success' });
+        } else {
+            setToast({ show: true, message: "Error al subir la imagen", type: 'error' });
         }
     };
+
+    const copyToClipboard = (text: string, label: string) => {
+        navigator.clipboard.writeText(text).then(() => {
+            setCopiedLink(label);
+            setToast({ show: true, message: `Enlace copiado al portapapeles`, type: 'success' });
+            setTimeout(() => setCopiedLink(null), 3000);
+        });
+    };
+
+    const brandLinks: { label: string; brandParam: Brand; color: string }[] = [
+        { label: 'In Forma', brandParam: 'informa', color: 'text-[#ccff00] border-[#ccff00]/30' },
+        { label: 'Phisis Nutricosmetica', brandParam: 'phisis', color: 'text-emerald-400 border-emerald-400/30' },
+        { label: 'Phisis Fragancias', brandParam: 'iqual', color: 'text-indigo-400 border-indigo-400/30' },
+        { label: 'BioFarma Natural', brandParam: 'biofarma', color: 'text-blue-400 border-blue-400/30' },
+    ];
 
     return (
         <div className="animate-fade-in space-y-12 pb-32 relative">
@@ -79,15 +112,46 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
             <div className={`fixed bottom-8 right-8 z-50 transition-all duration-300 ${hasChanges ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
                 <button 
                     onClick={handleSaveAll}
-                    disabled={isSaving}
+                    disabled={isSaving || uploading}
                     className="bg-[#ccff00] text-black px-8 py-4 rounded-full font-black shadow-[0_0_20px_rgba(204,255,0,0.4)] flex items-center gap-3 hover:scale-105 transition-transform disabled:opacity-70 disabled:cursor-not-allowed border-2 border-black"
                 >
-                    {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                    GUARDAR CAMBIOS
+                    {(isSaving || uploading) ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                    {uploading ? 'SUBIENDO...' : 'GUARDAR CAMBIOS'}
                 </button>
             </div>
 
-             {/* NUEVA SECCIÓN: CONTROL DE PRECIOS */}
+             {/* SECCIÓN: ENLACES DIRECTOS */}
+             <div>
+                <h1 className="text-3xl font-black text-white italic mb-6 flex items-center gap-3">
+                    <Link className="w-8 h-8 text-[#ccff00]" /> ENLACES <span className="text-[#ccff00]">DIRECTOS</span>
+                </h1>
+                <div className="bg-zinc-900/40 backdrop-blur-md p-8 rounded-2xl shadow-xl border border-white/5">
+                    <p className="text-zinc-400 mb-6">Genera enlaces para compartir que lleven a los clientes directamente a una sección específica de la tienda.</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {brandLinks.map((link) => {
+                            const url = `${window.location.origin}/?brand=${link.brandParam}`;
+                            const isCopied = copiedLink === link.label;
+                            return (
+                                <div key={link.brandParam} className={`p-4 bg-black/40 rounded-xl border ${link.color} flex justify-between items-center group`}>
+                                    <div>
+                                        <h3 className={`font-bold ${link.color.split(' ')[0]}`}>{link.label}</h3>
+                                        <p className="text-zinc-500 text-xs truncate max-w-[250px]">{url}</p>
+                                    </div>
+                                    <button 
+                                        onClick={() => copyToClipboard(url, link.label)}
+                                        className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-zinc-300 hover:text-white transition-colors flex items-center gap-2"
+                                    >
+                                        {isCopied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                                        <span className="text-xs font-bold">{isCopied ? 'Copiado!' : 'Copiar Link'}</span>
+                                    </button>
+                                </div>
+                            )
+                        })}
+                    </div>
+                </div>
+             </div>
+
+             {/* SECCIÓN: CONTROL DE PRECIOS */}
              <div>
                 <h1 className="text-3xl font-black text-white italic mb-6">POLÍTICA DE <span className="text-[#ccff00]">PRECIOS</span></h1>
                 <div className="bg-zinc-900/40 backdrop-blur-md p-8 rounded-2xl shadow-xl border border-white/5 grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -95,7 +159,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                     {/* Descuento Revendedores */}
                     <div className="p-6 bg-blue-900/10 border border-blue-500/30 rounded-xl relative overflow-hidden group">
                         <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                            <Percent className="w-24 h-24 text-blue-500" />
+                            <Users className="w-24 h-24 text-blue-500" />
                         </div>
                         <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
                             <Users className="w-5 h-5 text-blue-400" /> Margen Revendedores
@@ -177,11 +241,17 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                                 <input 
                                     type="file" 
                                     accept="image/*"
-                                    onChange={(e) => handleLogoUpload(e, brand.key as keyof SiteContent)}
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                    ref={(el) => (fileInputRefs.current[brand.key] = el)}
+                                    onChange={(e) => handleCloudUpload(e, brand.key as keyof SiteContent)}
+                                    className="hidden"
                                 />
-                                <button className="w-full bg-white/5 hover:bg-white/10 text-zinc-300 text-xs py-2 rounded flex items-center justify-center gap-2 transition-colors">
-                                    <Upload className="w-3 h-3" /> Subir Archivo
+                                <button 
+                                    onClick={() => fileInputRefs.current[brand.key]?.click()}
+                                    disabled={uploading}
+                                    className="w-full bg-white/5 hover:bg-white/10 text-zinc-300 text-xs py-2 rounded flex items-center justify-center gap-2 transition-colors"
+                                >
+                                    {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                                    Subir Archivo
                                 </button>
                             </div>
                         </div>
@@ -225,11 +295,17 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                                 <input 
                                     type="file" 
                                     accept="image/*"
-                                    onChange={(e) => handleLogoUpload(e, brand.key as keyof SiteContent)}
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                    ref={(el) => (fileInputRefs.current[brand.key] = el)}
+                                    onChange={(e) => handleCloudUpload(e, brand.key as keyof SiteContent)}
+                                    className="hidden"
                                 />
-                                <button className="w-full bg-white/5 hover:bg-white/10 text-zinc-300 text-xs py-2 rounded flex items-center justify-center gap-2 transition-colors">
-                                    <Upload className="w-3 h-3" /> Subir Imagen Local
+                                <button 
+                                    onClick={() => fileInputRefs.current[brand.key]?.click()}
+                                    disabled={uploading}
+                                    className="w-full bg-white/5 hover:bg-white/10 text-zinc-300 text-xs py-2 rounded flex items-center justify-center gap-2 transition-colors"
+                                >
+                                    {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                                    Subir Imagen Local
                                 </button>
                             </div>
                         </div>
