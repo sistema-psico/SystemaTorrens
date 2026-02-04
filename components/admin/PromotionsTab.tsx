@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Banner, Product } from '../../types';
 import { 
-    Plus, Trash2, Package
+    Plus, Trash2, Package, Upload, Loader2
 } from 'lucide-react';
+import { useImageUpload } from '../../hooks/useImageUpload';
+import Toast, { ToastType } from '../Toast';
 
 interface PromotionsTabProps {
     banners: Banner[];
@@ -19,7 +21,33 @@ const PromotionsTab: React.FC<PromotionsTabProps> = ({ banners, setBanners, prod
     const [selectedPromoProductId, setSelectedPromoProductId] = useState('');
     const [promoQuantity, setPromoQuantity] = useState(1);
 
+    // Image Upload State
+    const { uploadImage, uploading } = useImageUpload();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [toast, setToast] = useState<{ show: boolean; message: string; type: ToastType } | null>(null);
+
     // --- HANDLERS ---
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Validar tamaño (ej: máx 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            setToast({ show: true, message: "La imagen es muy pesada (Máx 5MB)", type: 'error' });
+            return;
+        }
+
+        const url = await uploadImage(file);
+        
+        if (url) {
+            setCurrentBanner(prev => ({ ...prev, image: url }));
+            setToast({ show: true, message: "Imagen subida correctamente", type: 'success' });
+        } else {
+            setToast({ show: true, message: "Error al subir imagen", type: 'error' });
+        }
+    };
+
     const handleSaveBanner = () => {
         if (!currentBanner.title) return;
         const bannerToSave: Banner = {
@@ -66,7 +94,15 @@ const PromotionsTab: React.FC<PromotionsTabProps> = ({ banners, setBanners, prod
     };
 
     return (
-        <div className="animate-fade-in">
+        <div className="animate-fade-in relative">
+            {toast?.show && (
+                <Toast 
+                    message={toast.message} 
+                    type={toast.type} 
+                    onClose={() => setToast(null)} 
+                />
+            )}
+
             <div className="flex justify-between items-center mb-8">
                 <div>
                     <h1 className="text-3xl font-black text-white italic">BANNERS Y <span className="text-[#ccff00]">OFERTAS</span></h1>
@@ -137,10 +173,36 @@ const PromotionsTab: React.FC<PromotionsTabProps> = ({ banners, setBanners, prod
                                 <label className="block text-xs font-bold text-zinc-400 mb-1">Descripción</label>
                                 <textarea rows={3} placeholder="Descripción" className="w-full bg-black/50 border border-white/10 p-3 rounded text-white outline-none focus:border-[#ccff00]" value={currentBanner.description || ''} onChange={e => setCurrentBanner({...currentBanner, description: e.target.value})} />
                             </div>
+                            
+                            {/* IMAGEN: URL O SUBIDA LOCAL */}
                             <div>
-                                <label className="block text-xs font-bold text-zinc-400 mb-1">URL Imagen</label>
-                                <input type="text" placeholder="URL Imagen" className="w-full bg-black/50 border border-white/10 p-3 rounded text-white outline-none focus:border-[#ccff00]" value={currentBanner.image || ''} onChange={e => setCurrentBanner({...currentBanner, image: e.target.value})} />
+                                <label className="block text-xs font-bold text-zinc-400 mb-1">Imagen del Banner</label>
+                                <div className="flex gap-2">
+                                    <input 
+                                        type="text" 
+                                        placeholder="Pegar URL o subir archivo..." 
+                                        className="flex-1 bg-black/50 border border-white/10 p-3 rounded-lg text-white outline-none focus:border-[#ccff00]" 
+                                        value={currentBanner.image || ''} 
+                                        onChange={e => setCurrentBanner({...currentBanner, image: e.target.value})} 
+                                    />
+                                    <input 
+                                        type="file" 
+                                        ref={fileInputRef}
+                                        onChange={handleFileChange}
+                                        accept="image/*"
+                                        className="hidden"
+                                    />
+                                    <button 
+                                        onClick={() => fileInputRef.current?.click()}
+                                        disabled={uploading}
+                                        className="bg-white/10 hover:bg-white/20 text-white p-3 rounded-lg transition-colors disabled:opacity-50"
+                                        title="Subir desde dispositivo"
+                                    >
+                                        {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
+                                    </button>
+                                </div>
                             </div>
+
                             <div>
                                 <label className="block text-xs font-bold text-zinc-400 mb-1">Marca</label>
                                 <select 
