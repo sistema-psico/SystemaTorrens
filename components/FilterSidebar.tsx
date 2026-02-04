@@ -40,13 +40,14 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   const textTitle = isSports ? 'text-white' : isIqual ? 'text-white' : isBio ? 'text-blue-900' : 'text-emerald-900';
   const textSub = isSports ? 'text-gray-400' : isIqual ? 'text-slate-400' : 'text-gray-500';
   const accentColor = isSports ? 'text-[#ccff00]' : isIqual ? 'text-indigo-400' : isBio ? 'text-blue-700' : 'text-emerald-700';
-  
-  // NOMBRES CORREGIDOS (PHISIS)
+  const accentBg = isSports ? 'bg-[#ccff00]' : isIqual ? 'bg-indigo-600' : isBio ? 'bg-blue-900' : 'bg-emerald-800';
+  const checkboxBorder = isSports ? 'border-gray-600 checked:bg-[#ccff00] checked:border-[#ccff00]' : isIqual ? 'border-slate-600 checked:bg-indigo-500' : 'border-gray-300 checked:bg-emerald-600';
+
   const brands: { id: Brand; label: string }[] = [
     { id: 'informa', label: 'In Forma' },
-    { id: 'phisis', label: 'Phisis Nutricosmetica' },
+    { id: 'phisis', label: 'Phisis' },
     { id: 'iqual', label: 'Phisis Fragancias' },
-    { id: 'biofarma', label: 'BioFarma Natural' },
+    { id: 'biofarma', label: 'BioFarma' },
   ];
 
   return (
