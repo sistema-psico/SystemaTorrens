@@ -1,4 +1,4 @@
-import { Product, ContactInfo, Banner, Reseller, Client, SiteContent, PaymentConfig, SocialReview, PeptoneFormula } from './types';
+import { Product, ContactInfo, Banner, Reseller, Client, SiteContent, PaymentConfig, SocialReview, PeptoneFormula, Coupon } from './types';
 
 export const linfarCatalog: PeptoneFormula[] = [
     { 
@@ -17,7 +17,6 @@ export const linfarCatalog: PeptoneFormula[] = [
         description: 'Revitaliza los elementos constitutivos de las articulaciones y el tejido colágeno en general. Indicado en Colagenosis, Artritis reumatoidea, Poliartritis, Lupus eritematoso, Esclerodermia, Artrosis, Artrogénesis imperfecta, Fracturas y Luxaciones.',
         presentations: ['Ampollas', 'Comprimidos', 'Gotas'] 
     },
-    // ... Puedes agregar el resto del catálogo aquí si lo necesitas completo ...
 ];
 
 export const initialSiteContent: SiteContent = {
@@ -95,7 +94,6 @@ export const initialProducts: Product[] = [
     stock: 50,
     active: true
   },
-  // ... Resto de productos iniciales ...
 ];
 
 export const initialBanners: Banner[] = [
@@ -131,3 +129,9 @@ export const initialResellers: Reseller[] = [
 ];
 
 export const initialAdminClients: Client[] = [];
+
+// NUEVO: Cupones Iniciales
+export const initialCoupons: Coupon[] = [
+    { id: 'CP-001', code: 'BIENVENIDA', discountPercentage: 10, active: true },
+    { id: 'CP-002', code: 'VERANO2024', discountPercentage: 15, active: true }
+];
