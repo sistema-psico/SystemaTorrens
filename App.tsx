@@ -12,7 +12,7 @@ import Login from './components/Login';
 import SocialProof from './components/SocialProof';
 import InstallAppButton from './components/InstallAppButton';
 import { initialProducts, initialContactInfo, initialBanners, initialResellers, initialAdminClients, initialSiteContent, initialPaymentConfig, initialSocialReviews } from './data';
-import { Product, CartItem, Category, ContactInfo, Banner, Reseller, Client, SiteContent, User, PaymentConfig, SocialReview, Brand, PeptoneFormula, ResellerOrder, Sale } from './types';
+import { Product, CartItem, Category, ContactInfo, Banner, Reseller, Client, SiteContent, User, PaymentConfig, SocialReview, Brand, PeptoneFormula, ResellerOrder } from './types';
 import { Sparkles, SlidersHorizontal, Lock, MapPin, Phone, Mail, Instagram, Bell } from 'lucide-react';
 
 import { useFirestore } from './hooks/useFirestore';
@@ -26,24 +26,20 @@ function App() {
   const [adminClients, setAdminClients] = useFirestore<Client[]>('adminClients', initialAdminClients);
   const [siteContent, setSiteContent] = useFirestore<SiteContent>('siteContent', initialSiteContent);
   const [socialReviews, setSocialReviews] = useFirestore<SocialReview[]>('socialReviews', initialSocialReviews);
-  const [directOrders, setDirectOrders] = useFirestore<ResellerOrder[]>('directOrders', []);
   
-  const [adminSales, setAdminSales] = useFirestore<Sale[]>('adminSales', []);
+  // Unificamos todo en directOrders (tanto web como manuales del admin)
+  const [directOrders, setDirectOrders] = useFirestore<ResellerOrder[]>('directOrders', []);
   
   const [currentView, setCurrentView] = useState<'shop' | 'admin' | 'reseller' | 'login'>('shop');
 
-  // --- CAMBIO AQUÍ: Lógica para detectar la marca desde la URL ---
-  // Esta función se ejecuta una sola vez al cargar la app para definir el estado inicial
   const [activeBrand, setActiveBrand] = useState<Brand>(() => {
       const params = new URLSearchParams(window.location.search);
       const brandParam = params.get('brand');
-      // Validamos que el parámetro sea una marca válida interna
       if (brandParam === 'informa' || brandParam === 'phisis' || brandParam === 'iqual' || brandParam === 'biofarma') {
           return brandParam as Brand;
       }
-      return 'informa'; // Marca por defecto si no hay parámetro o es inválido
+      return 'informa';
   });
-  // ---------------------------------------------------------------
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -227,8 +223,6 @@ function App() {
             setSiteContent={setSiteContent}
             directOrders={directOrders}
             setDirectOrders={setDirectOrders}
-            adminSales={adminSales} 
-            setAdminSales={setAdminSales}
         />
       );
   }
