@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Product, ContactInfo, Banner, Reseller, Client, SiteContent, PaymentConfig, SocialReview, ResellerOrder, Sale } from '../types';
+import { Product, ContactInfo, Banner, Reseller, Client, SiteContent, PaymentConfig, SocialReview, ResellerOrder } from '../types';
 import { 
   X, Settings, Package, LayoutDashboard, 
   Tag, Users, UserCircle, Bell, BarChart3, 
-  Truck, DollarSign, Menu
+  Truck, Menu
 } from 'lucide-react';
 
 import InventoryTab from './admin/InventoryTab';
@@ -14,7 +14,6 @@ import MessagesTab from './admin/MessagesTab';
 import AnalyticsTab from './admin/AnalyticsTab';
 import SettingsTab from './admin/SettingsTab';
 import OrdersTab from './admin/OrdersTab';
-import AdminSales from './admin/AdminSales';
 
 interface AdminPanelProps {
   products: Product[];
@@ -36,17 +35,15 @@ interface AdminPanelProps {
   setSiteContent: (content: SiteContent) => void;
   directOrders?: ResellerOrder[];
   setDirectOrders?: (orders: ResellerOrder[]) => void;
-  adminSales?: Sale[];
-  setAdminSales?: (sales: Sale[]) => void;
 }
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ 
   products = [], setProducts, contactInfo, setContactInfo, paymentConfig, setPaymentConfig,
   banners = [], setBanners, socialReviews = [], setSocialReviews, resellers = [], setResellers,
   adminClients = [], setAdminClients, onClose, siteContent, setSiteContent,
-  directOrders = [], setDirectOrders, adminSales = [], setAdminSales
+  directOrders = [], setDirectOrders
 }) => {
-  const [activeTab, setActiveTab] = useState<'inventory' | 'settings' | 'promotions' | 'resellers' | 'clients' | 'messages' | 'analytics' | 'orders' | 'adminSales'>('orders');
+  const [activeTab, setActiveTab] = useState<'inventory' | 'settings' | 'promotions' | 'resellers' | 'clients' | 'messages' | 'analytics' | 'orders'>('orders');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   if (!products || !contactInfo || !siteContent) {
@@ -96,7 +93,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           {[
             { id: 'orders', icon: Truck, label: 'Pedidos', badge: totalPending, badgeColor: 'bg-blue-600' },
-            { id: 'adminSales', icon: DollarSign, label: 'Ventas Directas' },
             { id: 'inventory', icon: Package, label: 'Inventario' },
             { id: 'promotions', icon: Tag, label: 'Promociones' },
             { id: 'analytics', icon: BarChart3, label: 'Estadísticas' },
@@ -134,19 +130,27 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>
       </div>
 
-      {/* MAIN CONTENT */}
       <div className="flex-1 p-4 md:p-8 z-10 overflow-y-auto h-[calc(100vh-64px)] md:h-screen">
         {activeTab === 'inventory' && <InventoryTab products={products} setProducts={setProducts} resellers={resellers} />}
-        {/* AQUÍ SE AGREGARON products y setProducts */}
-        {activeTab === 'orders' && <OrdersTab resellers={resellers} setResellers={setResellers} directOrders={directOrders} setDirectOrders={setDirectOrders!} products={products} setProducts={setProducts} />}
+        {/* Pasamos todos los props necesarios para crear pedidos desde aquí */}
+        {activeTab === 'orders' && (
+            <OrdersTab 
+                resellers={resellers} 
+                setResellers={setResellers} 
+                directOrders={directOrders} 
+                setDirectOrders={setDirectOrders!} 
+                products={products} 
+                setProducts={setProducts} 
+                adminClients={adminClients} // Needed for creating new orders
+                setAdminClients={setAdminClients} // Needed for updating client balance
+            />
+        )}
         {activeTab === 'promotions' && <PromotionsTab banners={banners} setBanners={setBanners} products={products} />}
         {activeTab === 'resellers' && <ResellersTab resellers={resellers} setResellers={setResellers} products={products} />}
         {activeTab === 'clients' && <ClientsTab adminClients={adminClients} setAdminClients={setAdminClients} />}
         {activeTab === 'messages' && <MessagesTab resellers={resellers} setResellers={setResellers} />}
-        {/* AQUÍ SE AGREGÓ adminSales */}
-        {activeTab === 'analytics' && <AnalyticsTab products={products} resellers={resellers} adminSales={adminSales!} setResellers={setResellers} />}
+        {activeTab === 'analytics' && <AnalyticsTab products={products} resellers={resellers} adminSales={[]} setResellers={setResellers} />} 
         {activeTab === 'settings' && <SettingsTab siteContent={siteContent} setSiteContent={setSiteContent} contactInfo={contactInfo} setContactInfo={setContactInfo} paymentConfig={paymentConfig} setPaymentConfig={setPaymentConfig} />}
-        {activeTab === 'adminSales' && <AdminSales products={products} setProducts={setProducts} adminClients={adminClients} setAdminClients={setAdminClients} adminSales={adminSales} setAdminSales={setAdminSales!} />}
       </div>
     </div>
   );
