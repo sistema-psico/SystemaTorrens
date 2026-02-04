@@ -17,7 +17,7 @@ interface CartSidebarProps {
   currentUser: User | null;
   onLoginRequest: () => void;
   onClientLogin: (user: User) => void;
-  onOrderCreate: (order: ResellerOrder) => void; // Recibimos la función
+  onOrderCreate: (order: ResellerOrder) => void; 
 }
 
 type CheckoutStep = 'cart' | 'login' | 'payment';
@@ -116,7 +116,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
       }
   };
 
-  // NUEVA LÓGICA DE CONFIRMACIÓN
+  // NUEVA LÓGICA DE CONFIRMACIÓN CON REGISTRO DE SALDOS
   const handleConfirmAndWhatsApp = () => {
     const cleanStorePhone = contactInfo.phone.replace(/[^\d]/g, '');
 
@@ -132,9 +132,13 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
         clientName: currentUser?.name || 'Invitado',
         items: [...cart],
         total: total,
-        status: 'Pendiente', // Equivale a "En Preparación"
+        status: 'Pendiente', 
         date: new Date().toLocaleDateString(),
-        type: 'direct', // Marcamos que es venta directa
+        type: 'direct',
+        // REGISTRO DE PAGOS PARCIALES
+        amountPaid: payNowAmount,
+        balanceDue: payLaterAmount,
+        paymentStatus: payLaterAmount > 0 ? 'partial' : 'paid',
         shippingInfo: {
             address: customerAddress,
             phone: customerPhone,
@@ -144,7 +148,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
         }
     };
 
-    // 2. Guardar en la base de datos (App.tsx)
+    // 2. Guardar en la base de datos
     onOrderCreate(newOrder);
 
     // 3. Generar mensaje WhatsApp
@@ -159,15 +163,21 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
         message += `▪️ ${item.quantity}x ${item.name} ($${finalPrice.toLocaleString()})\n`;
     });
 
-    message += `\nTotal: *$${total.toLocaleString()}*\n`;
+    message += `\nTotal Pedido: *$${total.toLocaleString()}*\n`;
+    message += `------------------------------\n`;
     message += `Pago: ${paymentMethod.toUpperCase()} (${paymentType === 'full' ? '100%' : '50% Seña'})\n`;
+    message += `✅ A PAGAR AHORA: *$${payNowAmount.toLocaleString()}*\n`;
+    
+    if (payLaterAmount > 0) {
+        message += `⚠️ SALDO PENDIENTE: *$${payLaterAmount.toLocaleString()}* (Al recibir)\n`;
+    }
+
     message += `\n*ENVÍO:*\n📍 ${customerAddress}\n📞 ${customerPhone}\n`;
     if (orderNotes) message += `📝 ${orderNotes}`;
 
     const whatsappUrl = `https://wa.me/${cleanStorePhone}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
     
-    // 4. Limpiar y cerrar (ya lo hace onOrderCreate en App.tsx, pero reseteamos local)
     setCheckoutStep('cart');
   };
 
@@ -248,7 +258,18 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
                      </div>
                      <div><h3 className={`font-bold mb-3 ${textMain}`}>2. Modalidad de Pago</h3><div className="grid grid-cols-2 gap-3"><button onClick={() => setPaymentType('full')} className={`p-4 rounded-xl border-2 transition-all text-left relative ${paymentType === 'full' ? (isSports ? 'border-[#ccff00] bg-[#ccff00]/10' : isIqual ? 'border-indigo-500 bg-indigo-500/10' : isBio ? 'border-blue-600 bg-blue-50' : 'border-emerald-600 bg-emerald-50') : (isDark ? 'border-white/10 bg-black/40' : 'border-gray-200 bg-white')}`}>{paymentType === 'full' && <div className={`absolute top-2 right-2 w-4 h-4 rounded-full flex items-center justify-center ${isSports ? 'bg-[#ccff00] text-black' : isIqual ? 'bg-indigo-500 text-white' : isBio ? 'bg-blue-600 text-white' : 'bg-emerald-600 text-white'}`}><Check className="w-3 h-3" /></div>}<span className={`block text-xs font-bold uppercase mb-1 ${textMuted}`}>Recomendado</span><span className={`block font-bold text-lg mb-1 ${textMain}`}>100%</span></button><button onClick={() => setPaymentType('deposit')} className={`p-4 rounded-xl border-2 transition-all text-left relative ${paymentType === 'deposit' ? (isSports ? 'border-[#ccff00] bg-[#ccff00]/10' : isIqual ? 'border-indigo-500 bg-indigo-500/10' : isBio ? 'border-blue-600 bg-blue-50' : 'border-emerald-600 bg-emerald-50') : (isDark ? 'border-white/10 bg-black/40' : 'border-gray-200 bg-white')}`}>{paymentType === 'deposit' && <div className={`absolute top-2 right-2 w-4 h-4 rounded-full flex items-center justify-center ${isSports ? 'bg-[#ccff00] text-black' : isIqual ? 'bg-indigo-500 text-white' : isBio ? 'bg-blue-600 text-white' : 'bg-emerald-600 text-white'}`}><Check className="w-3 h-3" /></div>}<span className={`block text-xs font-bold uppercase mb-1 ${textMuted}`}>Seña</span><span className={`block font-bold text-lg mb-1 ${textMain}`}>50%</span></button></div></div>
                      <div><h3 className={`font-bold mb-3 ${textMain}`}>3. Medio de Pago</h3><div className="space-y-2">{paymentConfig.transfer.enabled && (<div className="space-y-2"><button onClick={() => setPaymentMethod('transfer')} className={`w-full p-3 rounded-lg flex items-center gap-3 transition-colors ${paymentMethod === 'transfer' ? (isSports ? 'bg-[#ccff00] text-black font-bold' : isIqual ? 'bg-indigo-600 text-white font-bold' : isBio ? 'bg-blue-900 text-white font-bold' : 'bg-emerald-800 text-white font-bold') : (isDark ? 'bg-white/10 text-gray-300 hover:bg-white/20' : 'bg-gray-100 text-gray-700 hover:bg-gray-200')}`}><Banknote className="w-5 h-5" /> Transferencia Bancaria</button>{paymentMethod === 'transfer' && (<div className={`p-4 rounded-lg border text-sm space-y-3 animate-fade-in ${isDark ? 'bg-black/40 border-white/10' : 'bg-blue-50 border-blue-100'}`}><div className="flex justify-between items-center"><span className={textMuted}>Banco:</span><span className={`font-bold ${textMain}`}>{paymentConfig.transfer.bankName}</span></div><div className="p-3 bg-black/10 rounded flex items-center justify-between border border-black/5"><div className="flex flex-col"><span className="text-[10px] uppercase text-gray-500 font-bold">Alias</span><span className={`font-mono text-lg font-bold ${accentColor}`}>{paymentConfig.transfer.alias}</span></div><button onClick={handleCopyAlias} className={`p-2 rounded-lg transition-colors ${isDark ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-white hover:bg-gray-50 text-emerald-800 shadow-sm'}`}>{copiedAlias ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : <Copy className="w-5 h-5" />}</button></div></div>)}</div>)}{paymentConfig.card.enabled && <button onClick={() => setPaymentMethod('card')} className={`w-full p-3 rounded-lg flex items-center gap-3 transition-colors ${paymentMethod === 'card' ? (isSports ? 'bg-[#ccff00] text-black font-bold' : isIqual ? 'bg-indigo-600 text-white font-bold' : isBio ? 'bg-blue-900 text-white font-bold' : 'bg-emerald-800 text-white font-bold') : (isDark ? 'bg-white/10 text-gray-300 hover:bg-white/20' : 'bg-gray-100 text-gray-700 hover:bg-gray-200')}`}><CreditCard className="w-5 h-5" /> Tarjeta Crédito / Débito</button>}{paymentConfig.cash.enabled && <button onClick={() => setPaymentMethod('cash')} className={`w-full p-3 rounded-lg flex items-center gap-3 transition-colors ${paymentMethod === 'cash' ? (isSports ? 'bg-[#ccff00] text-black font-bold' : isIqual ? 'bg-indigo-600 text-white font-bold' : isBio ? 'bg-blue-900 text-white font-bold' : 'bg-emerald-800 text-white font-bold') : (isDark ? 'bg-white/10 text-gray-300 hover:bg-white/20' : 'bg-gray-100 text-gray-700 hover:bg-gray-200')}`}><Wallet className="w-5 h-5" /> Efectivo</button>}</div></div>
-                     <div className={`p-4 rounded-xl border space-y-2 ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}><div className="flex justify-between text-sm"><span className={textMuted}>Total Carrito</span><span className={textMain}>${total.toLocaleString()}</span></div>{paymentType === 'deposit' && <div className="flex justify-between text-sm"><span className={textMuted}>Pendiente (Contra entrega)</span><span className={textMain}>${payLaterAmount.toLocaleString()}</span></div>}<div className={`border-t pt-2 mt-2 flex justify-between font-bold text-lg ${isDark ? 'border-white/10 ' + accentColor : isBio ? 'border-gray-200 text-blue-800' : 'border-gray-200 text-emerald-700'}`}><span>A Pagar Ahora</span><span>${payNowAmount.toLocaleString()}</span></div></div>
+                     <div className={`p-4 rounded-xl border space-y-2 ${isDark ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-gray-50'}`}>
+                         <div className="flex justify-between text-sm"><span className={textMuted}>Total Carrito</span><span className={textMain}>${total.toLocaleString()}</span></div>
+                         {paymentType === 'deposit' && (
+                             <>
+                                <div className="flex justify-between text-sm text-yellow-500 border-t border-white/5 pt-2 mt-2">
+                                    <span>Pendiente (Contra entrega)</span>
+                                    <span className="font-bold">${payLaterAmount.toLocaleString()}</span>
+                                </div>
+                             </>
+                         )}
+                         <div className={`border-t pt-2 mt-2 flex justify-between font-bold text-lg ${isDark ? 'border-white/10 ' + accentColor : isBio ? 'border-gray-200 text-blue-800' : 'border-gray-200 text-emerald-700'}`}><span>A Pagar Ahora</span><span>${payNowAmount.toLocaleString()}</span></div>
+                     </div>
                  </div>
                  <div className={`p-6 mt-auto border-t ${isDark ? 'border-white/10 bg-black/40' : 'border-gray-100 bg-white'}`}>
                      <button onClick={handleConfirmAndWhatsApp} disabled={!paymentMethod || !customerAddress.trim() || !customerPhone.trim()} className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 text-lg shadow-xl hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:cursor-not-allowed ${accentBg} ${accentTextBtn}`}>
