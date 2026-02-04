@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Brand, Product, Banner, SiteContent, PromotionItem } from '../types';
-import { ChevronLeft, ChevronRight, ShoppingCart, Dumbbell, Sparkles, Droplet, Leaf, ArrowRight, ChevronRight as ChevronIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ShoppingCart, Dumbbell, Sparkles, Droplet, Leaf } from 'lucide-react';
 
 interface HeroProps {
   activeBrand: Brand;
@@ -114,7 +114,7 @@ const Hero: React.FC<HeroProps> = ({ activeBrand, banners, products, onAddBundle
             
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-16 relative z-10">
                 <div className="text-center lg:text-left lg:w-1/2 relative z-10 animate-fade-in">
-                    {/* Siempre mostramos el icono representativo en lugar del logo para evitar duplicados con el Navbar */}
+                    {/* Icono/Logo representativo */}
                     {content.icon}
                     
                     <h1 className={`text-5xl lg:text-7xl font-black mb-6 tracking-tight ${activeBrand === 'informa' || activeBrand === 'iqual' ? 'text-white' : 'text-stone-900'} leading-none`}>
@@ -124,18 +124,11 @@ const Hero: React.FC<HeroProps> = ({ activeBrand, banners, products, onAddBundle
                     <p className={`text-xl mb-10 leading-relaxed ${activeBrand === 'informa' || activeBrand === 'iqual' ? 'text-gray-300' : 'text-stone-600'} max-w-xl mx-auto lg:mx-0 animate-slide-up`} style={{animationDelay: '0.3s'}}>
                         {content.description}
                     </p>
-
-                    {/* BOTÓN DE ACCIÓN PRINCIPAL (REEMPLAZA A LOS BOTONES GRANDES) */}
-                    <div className="mt-8 flex justify-center lg:justify-start animate-slide-up" style={{animationDelay: '0.4s'}}>
-                        <a href="#shop" className={`px-8 py-4 rounded-full font-bold flex items-center gap-2 transition-all hover:scale-105 ${content.accentColor} ${content.textColor} shadow-lg`}>
-                            VER CATÁLOGO <ChevronIcon className="w-5 h-5" />
-                        </a>
-                    </div>
                 </div>
-                {/* AQUÍ SE ELIMINÓ LA SECCIÓN "grid grid-cols-2" QUE CONTENÍA LOS BOTONES GRANDES */}
+                {/* Se eliminó cualquier botón de "Ver Catálogo" o cuadrícula de tarjetas aquí */}
             </div>
 
-            {/* Banners Slider */}
+            {/* Banners Slider (Ofertas Especiales) - Se mantiene porque es contenido dinámico valioso */}
             {brandBanners.length > 0 && (
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 relative z-20 animate-slide-up" style={{animationDelay: '0.5s'}}>
                     <div className="relative rounded-[2rem] overflow-hidden shadow-2xl group">
