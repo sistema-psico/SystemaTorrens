@@ -82,7 +82,6 @@ export interface SiteContent {
   logoBiofarma?: string;
   bioHeroBg?: string;
 
-  // Nuevos campos de configuración de descuentos
   resellerDiscount: number; 
   globalOfferDiscount: number; 
 }
@@ -151,6 +150,11 @@ export interface ResellerOrder {
   deliveryTimeEstimate?: string;
   shippingInfo?: ShippingInfo;
   type?: 'reseller' | 'direct';
+  
+  // --- NUEVOS CAMPOS FINANCIEROS ---
+  amountPaid?: number; // Cuanto pagó realmente (el 50% o el 100%)
+  balanceDue?: number; // Cuanto debe (el otro 50% o 0)
+  paymentStatus?: 'paid' | 'partial' | 'pending';
 }
 
 export interface Sale {
