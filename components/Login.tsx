@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import { Reseller } from '../types';
 import { ShieldCheck, LogIn, ChevronLeft } from 'lucide-react';
-import { signInWithEmailAndPassword } from 'firebase/auth'; // Importar función de login
-import { auth } from '../lib/firebase'; // Importar tu instancia de auth
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth'; // Importamos signOut
+import { auth } from '../lib/firebase'; 
 
 // --- LISTA DE ADMINISTRADORES AUTORIZADOS ---
-// Solo estos correos tendrán acceso al panel de control
 const ADMIN_EMAILS = [
-    'edur900@gmail.com', // Reemplaza con el real
-    'gabrieletorrens@gmail.com'     // Reemplaza con el real
+    'edur900@gmail.com', 
+    'gabrieletorrens@gmail.com'     
 ];
 
 interface LoginProps {
@@ -34,15 +33,19 @@ const Login: React.FC<LoginProps> = ({ resellers, onLoginSuccess, onClose }) => 
         try {
             // 1. INTENTAR LOGIN COMO ADMINISTRADOR (FIREBASE AUTH)
             if (ADMIN_EMAILS.includes(cleanEmail)) {
-                // Si el correo está en la lista de admins, verificamos con Firebase
+                // SOLUCIÓN AL PROBLEMA DE LOGIN:
+                // Si existe una sesión previa (ej: cliente con Google), la cerramos antes
+                // de intentar loguear como admin.
+                if (auth.currentUser) {
+                    await signOut(auth);
+                }
+
                 await signInWithEmailAndPassword(auth, cleanEmail, cleanPassword);
-                // Si Firebase no lanza error, las credenciales son válidas
                 onLoginSuccess('admin');
                 return;
             }
 
             // 2. INTENTAR LOGIN COMO REVENDEDOR (BASE DE DATOS)
-            // (Mantenemos la lógica actual para revendedores hasta migrarlos a Auth)
             const foundReseller = resellers.find(r => 
                 r.email.trim().toLowerCase() === cleanEmail && 
                 r.password.trim() === cleanPassword && 
@@ -69,7 +72,6 @@ const Login: React.FC<LoginProps> = ({ resellers, onLoginSuccess, onClose }) => 
 
         } catch (err: any) {
             console.error("Login Error:", err);
-            // Mensajes de error amigables
             if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
                 setError('Correo o contraseña de administrador incorrectos.');
             } else if (err.message === 'Credenciales no válidas') {
