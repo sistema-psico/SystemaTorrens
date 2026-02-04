@@ -75,10 +75,11 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
         });
     };
 
+    // NOMBRES CORREGIDOS (PHISIS)
     const brandLinks: { label: string; brandParam: Brand; color: string }[] = [
         { label: 'In Forma', brandParam: 'informa', color: 'text-[#ccff00] border-[#ccff00]/30' },
-        { label: 'Fhisis Nutricosmetica', brandParam: 'phisis', color: 'text-emerald-400 border-emerald-400/30' },
-        { label: 'Fhisis Fragancias', brandParam: 'iqual', color: 'text-indigo-400 border-indigo-400/30' },
+        { label: 'Phisis Nutricosmetica', brandParam: 'phisis', color: 'text-emerald-400 border-emerald-400/30' },
+        { label: 'Phisis Fragancias', brandParam: 'iqual', color: 'text-indigo-400 border-indigo-400/30' },
         { label: 'BioFarma Natural', brandParam: 'biofarma', color: 'text-blue-400 border-blue-400/30' },
     ];
 
@@ -103,7 +104,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                 </button>
             </div>
 
-             {/* --- NUEVA SECCIÓN: ENLACES DIRECTOS --- */}
+             {/* --- SECCIÓN: ENLACES DIRECTOS --- */}
              <div>
                 <h1 className="text-3xl font-black text-white italic mb-6 flex items-center gap-3">
                     <Link className="w-8 h-8 text-[#ccff00]" /> ENLACES <span className="text-[#ccff00]">DIRECTOS</span>
