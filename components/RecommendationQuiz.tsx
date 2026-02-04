@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Product } from '../types';
 import { Sparkles, ArrowRight, RefreshCw, X, Search, Activity, Heart, Zap, Smile, Check } from 'lucide-react';
@@ -194,53 +193,53 @@ const RecommendationQuiz: React.FC<QuizProps> = ({ isOpen, onClose, products, on
                             </div>
                         </div>
 
-                        {/* STEP 0: MAIN GOAL */}
+                        {/* STEP 0: MAIN GOAL (COLORES ACTIVOS PERMANENTES) */}
                         {step === 0 && (
                             <div className="animate-slide-up flex-1">
                                 <h2 className="text-2xl font-bold text-white mb-2 text-center">¿Qué estás buscando hoy?</h2>
                                 <p className="text-zinc-400 mb-8 text-center text-sm">Selecciona el área principal para enfocar la búsqueda.</p>
                                 
                                 <div className="grid grid-cols-1 gap-3">
-                                    <button onClick={() => handleGoalSelect('sports')} className="flex items-center p-4 rounded-xl bg-white/5 hover:bg-[#ccff00] hover:text-black border border-white/5 transition-all group">
-                                        <div className="p-2 bg-black/20 rounded-lg mr-4 group-hover:bg-black/10"><Zap className="w-5 h-5" /></div>
+                                    <button onClick={() => handleGoalSelect('sports')} className="flex items-center p-4 rounded-xl bg-[#ccff00] text-black border border-[#ccff00] shadow-lg shadow-[#ccff00]/10 transition-transform active:scale-95 group">
+                                        <div className="p-2 bg-black/20 rounded-lg mr-4"><Zap className="w-5 h-5" /></div>
                                         <div className="text-left">
                                             <span className="block font-bold">Rendimiento Deportivo</span>
-                                            <span className="text-xs opacity-60">Masa muscular, energía, peso</span>
+                                            <span className="text-xs opacity-70 font-medium">Masa muscular, energía, peso</span>
                                         </div>
-                                        <ArrowRight className="ml-auto w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        <ArrowRight className="ml-auto w-5 h-5 opacity-60 group-hover:translate-x-1 transition-transform" />
                                     </button>
 
-                                    <button onClick={() => handleGoalSelect('beauty')} className="flex items-center p-4 rounded-xl bg-white/5 hover:bg-emerald-500 hover:text-white border border-white/5 transition-all group">
-                                        <div className="p-2 bg-black/20 rounded-lg mr-4 group-hover:bg-black/10"><Sparkles className="w-5 h-5" /></div>
+                                    <button onClick={() => handleGoalSelect('beauty')} className="flex items-center p-4 rounded-xl bg-emerald-600 text-white border border-emerald-600 shadow-lg shadow-emerald-500/20 transition-transform active:scale-95 group">
+                                        <div className="p-2 bg-black/20 rounded-lg mr-4"><Sparkles className="w-5 h-5" /></div>
                                         <div className="text-left">
                                             <span className="block font-bold">Estética y Belleza</span>
-                                            <span className="text-xs opacity-60">Piel, cabello, anti-age</span>
+                                            <span className="text-xs opacity-80 font-medium">Piel, cabello, anti-age</span>
                                         </div>
-                                        <ArrowRight className="ml-auto w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        <ArrowRight className="ml-auto w-5 h-5 opacity-60 group-hover:translate-x-1 transition-transform" />
                                     </button>
 
-                                    <button onClick={() => handleGoalSelect('scent')} className="flex items-center p-4 rounded-xl bg-white/5 hover:bg-indigo-500 hover:text-white border border-white/5 transition-all group">
-                                        <div className="p-2 bg-black/20 rounded-lg mr-4 group-hover:bg-black/10"><Smile className="w-5 h-5" /></div>
+                                    <button onClick={() => handleGoalSelect('scent')} className="flex items-center p-4 rounded-xl bg-indigo-600 text-white border border-indigo-600 shadow-lg shadow-indigo-500/20 transition-transform active:scale-95 group">
+                                        <div className="p-2 bg-black/20 rounded-lg mr-4"><Smile className="w-5 h-5" /></div>
                                         <div className="text-left">
                                             <span className="block font-bold">Fragancias y Estilo</span>
-                                            <span className="text-xs opacity-60">Perfumes, cuidado personal</span>
+                                            <span className="text-xs opacity-80 font-medium">Perfumes, cuidado personal</span>
                                         </div>
-                                        <ArrowRight className="ml-auto w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        <ArrowRight className="ml-auto w-5 h-5 opacity-60 group-hover:translate-x-1 transition-transform" />
                                     </button>
 
-                                    <button onClick={() => handleGoalSelect('health')} className="flex items-center p-4 rounded-xl bg-white/5 hover:bg-blue-600 hover:text-white border border-white/5 transition-all group">
-                                        <div className="p-2 bg-black/20 rounded-lg mr-4 group-hover:bg-black/10"><Heart className="w-5 h-5" /></div>
+                                    <button onClick={() => handleGoalSelect('health')} className="flex items-center p-4 rounded-xl bg-blue-600 text-white border border-blue-600 shadow-lg shadow-blue-500/20 transition-transform active:scale-95 group">
+                                        <div className="p-2 bg-black/20 rounded-lg mr-4"><Heart className="w-5 h-5" /></div>
                                         <div className="text-left">
                                             <span className="block font-bold">Salud Integral</span>
-                                            <span className="text-xs opacity-60">Inmunidad, estrés, prevención</span>
+                                            <span className="text-xs opacity-80 font-medium">Inmunidad, estrés, prevención</span>
                                         </div>
-                                        <ArrowRight className="ml-auto w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        <ArrowRight className="ml-auto w-5 h-5 opacity-60 group-hover:translate-x-1 transition-transform" />
                                     </button>
                                 </div>
                             </div>
                         )}
 
-                        {/* STEP 1: SPECIFIC NEED (Dynamic based on Goal) */}
+                        {/* STEP 1: SPECIFIC NEED (COLORES ACTIVOS PERMANENTES) */}
                         {step === 1 && (
                             <div className="animate-slide-up flex-1">
                                 <h2 className="text-2xl font-bold text-white mb-2 text-center">Profundicemos un poco...</h2>
@@ -249,78 +248,78 @@ const RecommendationQuiz: React.FC<QuizProps> = ({ isOpen, onClose, products, on
                                 <div className="grid grid-cols-1 gap-3">
                                     {answers.goal === 'sports' && (
                                         <>
-                                            <button onClick={() => handleNeedSelect('muscle')} className="p-4 rounded-xl bg-white/5 hover:bg-[#ccff00] hover:text-black border border-white/5 font-bold transition-all">Ganar Masa Muscular / Fuerza</button>
-                                            <button onClick={() => handleNeedSelect('weight')} className="p-4 rounded-xl bg-white/5 hover:bg-[#ccff00] hover:text-black border border-white/5 font-bold transition-all">Quemar Grasa / Definición</button>
-                                            <button onClick={() => handleNeedSelect('energy')} className="p-4 rounded-xl bg-white/5 hover:bg-[#ccff00] hover:text-black border border-white/5 font-bold transition-all">Energía y Recuperación</button>
+                                            <button onClick={() => handleNeedSelect('muscle')} className="p-4 rounded-xl bg-[#ccff00] text-black font-bold shadow-lg transition-transform active:scale-95">Ganar Masa Muscular / Fuerza</button>
+                                            <button onClick={() => handleNeedSelect('weight')} className="p-4 rounded-xl bg-[#ccff00] text-black font-bold shadow-lg transition-transform active:scale-95">Quemar Grasa / Definición</button>
+                                            <button onClick={() => handleNeedSelect('energy')} className="p-4 rounded-xl bg-[#ccff00] text-black font-bold shadow-lg transition-transform active:scale-95">Energía y Recuperación</button>
                                         </>
                                     )}
                                     {answers.goal === 'beauty' && (
                                         <>
-                                            <button onClick={() => handleNeedSelect('antiage')} className="p-4 rounded-xl bg-white/5 hover:bg-emerald-500 hover:text-white border border-white/5 font-bold transition-all">Rejuvenecimiento (Anti-Age)</button>
-                                            <button onClick={() => handleNeedSelect('hair')} className="p-4 rounded-xl bg-white/5 hover:bg-emerald-500 hover:text-white border border-white/5 font-bold transition-all">Cabello y Uñas Fuertes</button>
-                                            <button onClick={() => handleNeedSelect('skin')} className="p-4 rounded-xl bg-white/5 hover:bg-emerald-500 hover:text-white border border-white/5 font-bold transition-all">Piel Radiante / Hidratación</button>
+                                            <button onClick={() => handleNeedSelect('antiage')} className="p-4 rounded-xl bg-emerald-600 text-white font-bold shadow-lg transition-transform active:scale-95">Rejuvenecimiento (Anti-Age)</button>
+                                            <button onClick={() => handleNeedSelect('hair')} className="p-4 rounded-xl bg-emerald-600 text-white font-bold shadow-lg transition-transform active:scale-95">Cabello y Uñas Fuertes</button>
+                                            <button onClick={() => handleNeedSelect('skin')} className="p-4 rounded-xl bg-emerald-600 text-white font-bold shadow-lg transition-transform active:scale-95">Piel Radiante / Hidratación</button>
                                         </>
                                     )}
                                     {answers.goal === 'scent' && (
                                         <>
-                                            <button onClick={() => handleNeedSelect('fresh')} className="p-4 rounded-xl bg-white/5 hover:bg-indigo-500 hover:text-white border border-white/5 font-bold transition-all">Fresco / Cítrico / Día</button>
-                                            <button onClick={() => handleNeedSelect('intense')} className="p-4 rounded-xl bg-white/5 hover:bg-indigo-500 hover:text-white border border-white/5 font-bold transition-all">Intenso / Amaderado / Noche</button>
-                                            <button onClick={() => handleNeedSelect('daily')} className="p-4 rounded-xl bg-white/5 hover:bg-indigo-500 hover:text-white border border-white/5 font-bold transition-all">Uso Diario / Versátil</button>
+                                            <button onClick={() => handleNeedSelect('fresh')} className="p-4 rounded-xl bg-indigo-600 text-white font-bold shadow-lg transition-transform active:scale-95">Fresco / Cítrico / Día</button>
+                                            <button onClick={() => handleNeedSelect('intense')} className="p-4 rounded-xl bg-indigo-600 text-white font-bold shadow-lg transition-transform active:scale-95">Intenso / Amaderado / Noche</button>
+                                            <button onClick={() => handleNeedSelect('daily')} className="p-4 rounded-xl bg-indigo-600 text-white font-bold shadow-lg transition-transform active:scale-95">Uso Diario / Versátil</button>
                                         </>
                                     )}
                                     {answers.goal === 'health' && (
                                         <>
-                                            <button onClick={() => handleNeedSelect('immunity')} className="p-4 rounded-xl bg-white/5 hover:bg-blue-600 hover:text-white border border-white/5 font-bold transition-all">Subir Defensas / Inmunidad</button>
-                                            <button onClick={() => handleNeedSelect('stress')} className="p-4 rounded-xl bg-white/5 hover:bg-blue-600 hover:text-white border border-white/5 font-bold transition-all">Combatir Estrés / Cansancio</button>
-                                            <button onClick={() => handleNeedSelect('bones')} className="p-4 rounded-xl bg-white/5 hover:bg-blue-600 hover:text-white border border-white/5 font-bold transition-all">Huesos y Articulaciones</button>
+                                            <button onClick={() => handleNeedSelect('immunity')} className="p-4 rounded-xl bg-blue-600 text-white font-bold shadow-lg transition-transform active:scale-95">Subir Defensas / Inmunidad</button>
+                                            <button onClick={() => handleNeedSelect('stress')} className="p-4 rounded-xl bg-blue-600 text-white font-bold shadow-lg transition-transform active:scale-95">Combatir Estrés / Cansancio</button>
+                                            <button onClick={() => handleNeedSelect('bones')} className="p-4 rounded-xl bg-blue-600 text-white font-bold shadow-lg transition-transform active:scale-95">Huesos y Articulaciones</button>
                                         </>
                                     )}
                                 </div>
-                                <button onClick={() => setStep(0)} className="mt-6 text-xs text-zinc-500 hover:text-white w-full text-center">Volver atrás</button>
+                                <button onClick={() => setStep(0)} className="mt-6 text-xs text-zinc-500 hover:text-white w-full text-center py-2">Volver atrás</button>
                             </div>
                         )}
 
-                        {/* STEP 2: GENDER / CONTEXT */}
+                        {/* STEP 2: GENDER / CONTEXT (COLORES ACTIVOS PERMANENTES) */}
                         {step === 2 && (
                             <div className="animate-slide-up flex-1">
                                 <h2 className="text-2xl font-bold text-white mb-2 text-center">Último paso</h2>
                                 <p className="text-zinc-400 mb-8 text-center text-sm">¿Para quién buscamos?</p>
                                 
                                 <div className="grid grid-cols-2 gap-4">
-                                    <button onClick={() => handleGenderSelect('male')} className="p-8 rounded-2xl bg-white/5 hover:bg-blue-900/40 hover:border-blue-500 border border-white/5 transition-all group">
+                                    <button onClick={() => handleGenderSelect('male')} className="p-8 rounded-2xl bg-blue-900/60 border border-blue-500 shadow-lg text-white transition-transform active:scale-95 group">
                                         <div className="text-3xl mb-2">👨</div>
-                                        <span className="font-bold text-white">Para Él</span>
+                                        <span className="font-bold">Para Él</span>
                                     </button>
-                                    <button onClick={() => handleGenderSelect('female')} className="p-8 rounded-2xl bg-white/5 hover:bg-pink-900/40 hover:border-pink-500 border border-white/5 transition-all group">
+                                    <button onClick={() => handleGenderSelect('female')} className="p-8 rounded-2xl bg-pink-900/60 border border-pink-500 shadow-lg text-white transition-transform active:scale-95 group">
                                         <div className="text-3xl mb-2">👩</div>
-                                        <span className="font-bold text-white">Para Ella</span>
+                                        <span className="font-bold">Para Ella</span>
                                     </button>
-                                    <button onClick={() => handleGenderSelect('unisex')} className="col-span-2 p-4 rounded-xl bg-white/5 hover:bg-purple-900/40 hover:border-purple-500 border border-white/5 transition-all">
-                                        <span className="font-bold text-white">Indistinto / Unisex</span>
+                                    <button onClick={() => handleGenderSelect('unisex')} className="col-span-2 p-4 rounded-xl bg-purple-900/60 border border-purple-500 shadow-lg text-white font-bold transition-transform active:scale-95">
+                                        <span className="font-bold">Indistinto / Unisex</span>
                                     </button>
                                 </div>
-                                <button onClick={() => setStep(1)} className="mt-6 text-xs text-zinc-500 hover:text-white w-full text-center">Volver atrás</button>
+                                <button onClick={() => setStep(1)} className="mt-6 text-xs text-zinc-500 hover:text-white w-full text-center py-2">Volver atrás</button>
                             </div>
                         )}
 
                         {/* STEP 3: RESULT */}
                         {step === 3 && result && (
                             <div className="animate-scale-in text-center flex-1 flex flex-col items-center">
-                                <div className="w-12 h-12 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center mb-4">
+                                <div className="w-12 h-12 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center mb-4 border border-green-500/30">
                                     <Check className="w-6 h-6" />
                                 </div>
                                 <h2 className="text-2xl font-bold text-white mb-1">¡Match Encontrado!</h2>
                                 <p className="text-zinc-400 mb-6 text-sm">Este producto es ideal para tus objetivos.</p>
 
-                                <div className="bg-black/40 border border-white/10 rounded-2xl p-6 w-full max-w-sm hover:border-[#ccff00]/30 transition-colors">
-                                    <img src={result.image} alt={result.name} className="w-32 h-32 object-cover rounded-lg mx-auto mb-4 bg-zinc-800" />
+                                <div className="bg-black/40 border border-white/10 rounded-2xl p-6 w-full max-w-sm hover:border-[#ccff00]/30 transition-colors shadow-2xl">
+                                    <img src={result.image} alt={result.name} className="w-32 h-32 object-cover rounded-lg mx-auto mb-4 bg-zinc-800 shadow-lg" />
                                     <h3 className="text-lg font-bold text-white mb-1">{result.name}</h3>
                                     <div className="mb-3">
                                         <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded border border-white/10 ${
-                                            result.brand === 'informa' ? 'text-[#ccff00] bg-[#ccff00]/10' :
-                                            result.brand === 'phisis' ? 'text-emerald-400 bg-emerald-400/10' :
-                                            result.brand === 'iqual' ? 'text-indigo-400 bg-indigo-400/10' :
-                                            result.brand === 'biofarma' ? 'text-blue-400 bg-blue-400/10' : 'text-white'
+                                            result.brand === 'informa' ? 'text-black bg-[#ccff00]' :
+                                            result.brand === 'phisis' ? 'text-white bg-emerald-600' :
+                                            result.brand === 'iqual' ? 'text-white bg-indigo-600' :
+                                            result.brand === 'biofarma' ? 'text-white bg-blue-600' : 'text-white'
                                         }`}>
                                             {result.category}
                                         </span>
@@ -330,7 +329,7 @@ const RecommendationQuiz: React.FC<QuizProps> = ({ isOpen, onClose, products, on
                                     
                                     <button 
                                         onClick={() => { onAddToCart(result); onClose(); }}
-                                        className="w-full py-3 bg-[#ccff00] text-black font-bold rounded-xl hover:bg-white transition-colors flex items-center justify-center gap-2"
+                                        className="w-full py-3 bg-[#ccff00] text-black font-bold rounded-xl hover:bg-white transition-colors flex items-center justify-center gap-2 shadow-lg"
                                     >
                                         AGREGAR AL CARRITO
                                     </button>
