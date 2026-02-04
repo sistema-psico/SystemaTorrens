@@ -7,6 +7,13 @@ export interface User {
     avatar: string;
 }
 
+export interface Coupon {
+    id: string;
+    code: string;
+    discountPercentage: number;
+    active: boolean;
+}
+
 export interface SocialReview {
     id: string;
     imageUrl: string;
@@ -151,10 +158,10 @@ export interface ResellerOrder {
   shippingInfo?: ShippingInfo;
   type?: 'reseller' | 'direct';
   
-  // --- NUEVOS CAMPOS FINANCIEROS ---
-  amountPaid?: number; // Cuanto pagó realmente
-  balanceDue?: number; // Cuanto debe (Saldo pendiente)
+  amountPaid?: number; 
+  balanceDue?: number; 
   paymentStatus?: 'paid' | 'partial' | 'pending';
+  appliedCoupon?: string; // Nuevo campo para guardar el cupón usado
 }
 
 export interface Sale {
@@ -165,6 +172,7 @@ export interface Sale {
   items: CartItem[];
   total: number;
   paymentMethod: string;
+  appliedCoupon?: string; // Nuevo campo
 }
 
 export interface Reseller {
