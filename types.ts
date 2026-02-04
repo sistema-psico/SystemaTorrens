@@ -152,8 +152,8 @@ export interface ResellerOrder {
   type?: 'reseller' | 'direct';
   
   // --- NUEVOS CAMPOS FINANCIEROS ---
-  amountPaid?: number; // Cuanto pagó realmente (el 50% o el 100%)
-  balanceDue?: number; // Cuanto debe (el otro 50% o 0)
+  amountPaid?: number; // Cuanto pagó realmente
+  balanceDue?: number; // Cuanto debe (Saldo pendiente)
   paymentStatus?: 'paid' | 'partial' | 'pending';
 }
 
