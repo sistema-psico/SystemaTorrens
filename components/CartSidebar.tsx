@@ -116,7 +116,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
       }
   };
 
-  // NUEVA LÓGICA DE CONFIRMACIÓN CON REGISTRO DE SALDOS
+  // --- LÓGICA DE CONFIRMACIÓN CON SALDOS ---
   const handleConfirmAndWhatsApp = () => {
     const cleanStorePhone = contactInfo.phone.replace(/[^\d]/g, '');
 
@@ -125,7 +125,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
     if (!customerAddress.trim()) { showToast("Ingresa la dirección."); return; }
     if (!customerPhone.trim()) { showToast("Ingresa un teléfono."); return; }
 
-    // 1. Crear el objeto de la orden para guardar
+    // 1. Crear el objeto de la orden con los datos financieros
     const newOrder: ResellerOrder = {
         id: `WEB-${Date.now()}`,
         clientId: currentUser?.id || 'guest',
@@ -135,7 +135,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
         status: 'Pendiente', 
         date: new Date().toLocaleDateString(),
         type: 'direct',
-        // REGISTRO DE PAGOS PARCIALES
+        // GUARDAMOS LO PAGADO Y LO QUE FALTA
         amountPaid: payNowAmount,
         balanceDue: payLaterAmount,
         paymentStatus: payLaterAmount > 0 ? 'partial' : 'paid',
@@ -164,7 +164,6 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
     });
 
     message += `\nTotal Pedido: *$${total.toLocaleString()}*\n`;
-    message += `------------------------------\n`;
     message += `Pago: ${paymentMethod.toUpperCase()} (${paymentType === 'full' ? '100%' : '50% Seña'})\n`;
     message += `✅ A PAGAR AHORA: *$${payNowAmount.toLocaleString()}*\n`;
     
