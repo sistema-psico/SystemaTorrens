@@ -1,382 +1,223 @@
-
 import React, { useState, useEffect } from 'react';
-import { ChevronRight, ShoppingBag, ArrowRight } from 'lucide-react';
-import { Banner, Product, SiteContent, Brand } from '../types';
+import { Brand, Product, Banner, SiteContent, PromotionItem } from '../types';
+import { ChevronLeft, ChevronRight, ShoppingCart, Dumbbell, Sparkles, Droplet, Leaf, ArrowRight } from 'lucide-react';
 
 interface HeroProps {
   activeBrand: Brand;
   banners: Banner[];
   products: Product[];
-  onAddBundleToCart: (product: Product, quantity: number, discount?: number) => void;
+  onAddBundleToCart: (product: Product, quantity: number, discount: number) => void;
   siteContent: SiteContent;
 }
 
 const Hero: React.FC<HeroProps> = ({ activeBrand, banners, products, onAddBundleToCart, siteContent }) => {
-  const [activeBannerIndex, setActiveBannerIndex] = useState(0);
+    const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
 
-  // Filter banners for current brand and active status
-  const currentBanners = banners.filter(b => b.brand === activeBrand && b.active);
+    // Filtrar banners activos por marca
+    const brandBanners = banners.filter(b => b.brand === activeBrand && b.active);
 
-  useEffect(() => {
-    setActiveBannerIndex(0);
-  }, [activeBrand]);
+    useEffect(() => {
+        setCurrentBannerIndex(0);
+    }, [activeBrand]);
 
-  const handleBannerClick = (banner: Banner) => {
-    if (banner.relatedProducts && banner.relatedProducts.length > 0) {
-        // Add all products in the bundle to cart with discount
-        const discount = banner.discountPercentage || 0;
-        banner.relatedProducts.forEach(item => {
+    const nextBanner = () => {
+        setCurrentBannerIndex((prev) => (prev + 1) % brandBanners.length);
+    };
+
+    const prevBanner = () => {
+        setCurrentBannerIndex((prev) => (prev - 1 + brandBanners.length) % brandBanners.length);
+    };
+
+    const handleAddBundle = (banner: Banner) => {
+        banner.relatedProducts.forEach((item: PromotionItem) => {
             const product = products.find(p => p.id === item.productId);
-            if (product && product.stock >= item.quantity) {
-                onAddBundleToCart(product, item.quantity, discount);
+            if (product) {
+                onAddBundleToCart(product, item.quantity, banner.discountPercentage || 0);
             }
         });
-    }
-  };
+    };
 
-  const renderBanner = () => {
-    if (currentBanners.length === 0) return null;
-    const banner = currentBanners[activeBannerIndex];
+    const currentBanner = brandBanners[currentBannerIndex];
 
-    const hasAction = banner.relatedProducts && banner.relatedProducts.length > 0;
-    
-    // Dynamic Banner Styles
-    let cardStyle = '';
-    let textStyleTitle = '';
-    let textStyleDesc = '';
-    let btnStyle = '';
-    let bgGradient = '';
+    const getHeroContent = () => {
+        switch (activeBrand) {
+            case 'informa':
+                return {
+                    title1: siteContent.sportsHeroTitle1,
+                    title2: siteContent.sportsHeroTitle2,
+                    description: siteContent.sportsHeroDescription,
+                    logo: siteContent.logoInforma,
+                    bgImage: siteContent.sportsHeroBg,
+                    title2Color: 'text-[#ccff00]',
+                    bgColor: 'bg-black',
+                    accentColor: 'bg-[#ccff00]',
+                    textColor: 'text-black',
+                    hoverBorder: 'hover:border-[#ccff00]/50',
+                    icon: <Dumbbell className="w-12 h-12 text-[#ccff00] mb-8 animate-pulse" />
+                };
+            case 'phisis':
+                return {
+                    title1: siteContent.beautyHeroTitle1,
+                    title2: siteContent.beautyHeroTitle2,
+                    description: siteContent.beautyHeroDescription,
+                    logo: siteContent.logoPhisis,
+                    bgImage: siteContent.beautyHeroBg,
+                    title2Color: 'text-emerald-400 italic',
+                    bgColor: 'bg-stone-50',
+                    accentColor: 'bg-emerald-600',
+                    textColor: 'text-white',
+                    hoverBorder: 'hover:border-emerald-300',
+                    icon: <Sparkles className="w-12 h-12 text-emerald-600 mb-8 animate-pulse" />
+                };
+            case 'iqual':
+                return {
+                    title1: siteContent.fragranceHeroTitle1,
+                    title2: siteContent.fragranceHeroTitle2,
+                    description: siteContent.fragranceHeroDescription,
+                    logo: siteContent.logoIqual,
+                    bgImage: siteContent.fragranceHeroBg,
+                    title2Color: 'text-indigo-400',
+                    bgColor: 'bg-slate-900',
+                    accentColor: 'bg-indigo-600',
+                    textColor: 'text-white',
+                    hoverBorder: 'hover:border-indigo-500/50',
+                    icon: <Droplet className="w-12 h-12 text-indigo-500 mb-8 animate-pulse" />
+                };
+            case 'biofarma':
+                return {
+                    title1: siteContent.bioHeroTitle1,
+                    title2: siteContent.bioHeroTitle2,
+                    description: siteContent.bioHeroDescription,
+                    logo: siteContent.logoBiofarma,
+                    bgImage: siteContent.bioHeroBg,
+                    title2Color: 'text-blue-500',
+                    bgColor: 'bg-white',
+                    accentColor: 'bg-blue-600',
+                    textColor: 'text-white',
+                    hoverBorder: 'hover:border-blue-300',
+                    icon: <Leaf className="w-12 h-12 text-blue-600 mb-8 animate-pulse" />
+                };
+        }
+    };
 
-    if (activeBrand === 'informa') {
-        cardStyle = 'bg-zinc-900/80 border-[#ccff00]/30';
-        textStyleTitle = 'text-white italic';
-        textStyleDesc = 'text-gray-300';
-        btnStyle = 'bg-white text-black hover:bg-[#ccff00]';
-        bgGradient = 'from-black via-black/80';
-    } else if (activeBrand === 'iqual') {
-        cardStyle = 'bg-slate-900/80 border-indigo-500/30';
-        textStyleTitle = 'text-white font-sans tracking-wider';
-        textStyleDesc = 'text-slate-300';
-        btnStyle = 'bg-indigo-600 text-white hover:bg-indigo-500';
-        bgGradient = 'from-slate-900 via-slate-900/80';
-    } else if (activeBrand === 'biofarma') {
-        cardStyle = 'bg-white/90 border-blue-200';
-        textStyleTitle = 'text-blue-900 font-sans tracking-tight';
-        textStyleDesc = 'text-gray-600';
-        btnStyle = 'bg-blue-900 text-white hover:bg-blue-800';
-        bgGradient = 'from-white via-white/80';
-    } else {
-        cardStyle = 'bg-white/80 border-white/50';
-        textStyleTitle = 'text-emerald-950 font-serif';
-        textStyleDesc = 'text-stone-600';
-        btnStyle = 'bg-emerald-800 text-white hover:bg-emerald-900';
-        bgGradient = 'from-white via-white/80';
-    }
+    const content = getHeroContent();
 
     return (
-        <div className={`w-full md:w-96 z-20 mt-10 xl:mt-0 xl:absolute xl:bottom-10 xl:right-0 transition-all duration-500 md:mx-auto xl:mx-0`}>
-             <div className={`backdrop-blur-xl border p-6 rounded-xl shadow-2xl relative overflow-hidden group ${cardStyle}`}>
-                {/* Banner Image Background */}
+        <div className={`relative overflow-hidden transition-colors duration-700 ${content.bgColor}`}>
+            {/* Background Image Overlay */}
+            {content.bgImage && (
                 <div className="absolute inset-0 z-0">
-                    <img src={banner.image} alt="" className="w-full h-full object-cover opacity-20 group-hover:scale-110 transition-transform duration-700" />
-                    <div className={`absolute inset-0 bg-gradient-to-t ${bgGradient}`}></div>
+                    <img src={content.bgImage} alt="Hero background" className="w-full h-full object-cover opacity-40 filter blur-sm scale-105" />
+                    <div className={`absolute inset-0 ${activeBrand === 'informa' || activeBrand === 'iqual' ? 'bg-black/60' : 'bg-white/40'} mix-blend-multiply`}></div>
+                </div>
+            )}
+            
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-16 relative z-10">
+                <div className="text-center lg:text-left lg:w-1/2 relative z-10 animate-fade-in">
+                    {content.logo && <img src={content.logo} alt={activeBrand} className="h-16 mb-8 mx-auto lg:mx-0 animate-slide-up" />}
+                    {!content.logo && content.icon}
+                    
+                    <h1 className={`text-5xl lg:text-7xl font-black mb-6 tracking-tight ${activeBrand === 'informa' || activeBrand === 'iqual' ? 'text-white' : 'text-stone-900'} leading-none`}>
+                        <span className="block animate-slide-up" style={{animationDelay: '0.1s'}}>{content.title1}</span>
+                        <span className={`block mt-2 animate-slide-up ${content.title2Color}`} style={{animationDelay: '0.2s'}}>{content.title2}</span>
+                    </h1>
+                    <p className={`text-xl mb-10 leading-relaxed ${activeBrand === 'informa' || activeBrand === 'iqual' ? 'text-gray-300' : 'text-stone-600'} max-w-xl mx-auto lg:mx-0 animate-slide-up`} style={{animationDelay: '0.3s'}}>
+                        {content.description}
+                    </p>
                 </div>
 
-                <div className="relative z-10">
-                    <div className="flex justify-between items-start mb-2">
-                        <span className={`text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider ${
-                             activeBrand === 'informa' 
-                             ? 'bg-[#ccff00] text-black' 
-                             : activeBrand === 'iqual' 
-                                ? 'bg-indigo-500 text-white'
-                                : activeBrand === 'biofarma'
-                                    ? 'bg-green-600 text-white'
-                                    : 'bg-emerald-800 text-white'
-                        }`}>
-                            Oferta Especial
-                        </span>
-                        
-                        {/* Pagination Dots */}
-                        {currentBanners.length > 1 && (
-                            <div className="flex gap-1">
-                                {currentBanners.map((_, idx) => (
+                {/* --- CAMBIO AQUÍ: NOMBRES DE LOS BOTONES --- */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-16 relative z-10 animate-fade-in" style={{animationDelay: '0.6s'}}>
+                    <a href="#shop" className={`group p-6 ${activeBrand === 'informa' ? 'bg-[#ccff00]/10 border-[#ccff00]' : 'bg-white/5 border-white/10'} backdrop-blur-md rounded-2xl border hover:border-[#ccff00]/50 transition-all duration-300 relative overflow-hidden`}>
+                        <div className={`absolute inset-0 bg-gradient-to-br from-[#ccff00]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
+                        <Dumbbell className={`w-8 h-8 mb-4 ${activeBrand === 'informa' ? 'text-[#ccff00]' : 'text-gray-400 group-hover:text-[#ccff00]'} transition-colors`} />
+                        <h3 className={`text-lg font-bold mb-2 ${activeBrand === 'informa' ? 'text-white' : 'text-gray-300 group-hover:text-white'}`}>In Forma</h3>
+                        <p className="text-sm text-gray-500 font-medium flex items-center gap-2">Explorar <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" /></p>
+                    </a>
+
+                    <a href="#shop" className={`group p-6 ${activeBrand === 'phisis' ? 'bg-emerald-500/10 border-emerald-400' : 'bg-white/60 border-stone-200'} backdrop-blur-md rounded-2xl border hover:border-emerald-300 transition-all duration-300 relative overflow-hidden`}>
+                        <div className={`absolute inset-0 bg-gradient-to-br from-emerald-400/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
+                        <Sparkles className={`w-8 h-8 mb-4 ${activeBrand === 'phisis' ? 'text-emerald-600' : 'text-stone-400 group-hover:text-emerald-600'} transition-colors`} />
+                        <h3 className={`text-lg font-bold mb-2 ${activeBrand === 'phisis' ? 'text-stone-900' : 'text-stone-600 group-hover:text-stone-900'}`}>Fhisis Nutricosmetica</h3>
+                        <p className="text-sm text-stone-500 font-medium flex items-center gap-2">Explorar <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" /></p>
+                    </a>
+
+                    <a href="#shop" className={`group p-6 ${activeBrand === 'iqual' ? 'bg-indigo-500/10 border-indigo-400' : 'bg-white/5 border-white/10'} backdrop-blur-md rounded-2xl border hover:border-indigo-500/50 transition-all duration-300 relative overflow-hidden`}>
+                         <div className={`absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
+                        <Droplet className={`w-8 h-8 mb-4 ${activeBrand === 'iqual' ? 'text-indigo-400' : 'text-gray-400 group-hover:text-indigo-400'} transition-colors`} />
+                        <h3 className={`text-lg font-bold mb-2 ${activeBrand === 'iqual' ? 'text-white' : 'text-gray-300 group-hover:text-white'}`}>Fhisis Fragancias</h3>
+                        <p className="text-sm text-gray-500 font-medium flex items-center gap-2">Explorar <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" /></p>
+                    </a>
+
+                    <a href="#shop" className={`group p-6 ${activeBrand === 'biofarma' ? 'bg-blue-500/10 border-blue-400' : 'bg-white/60 border-stone-200'} backdrop-blur-md rounded-2xl border hover:border-blue-300 transition-all duration-300 relative overflow-hidden`}>
+                         <div className={`absolute inset-0 bg-gradient-to-br from-blue-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
+                        <Leaf className={`w-8 h-8 mb-4 ${activeBrand === 'biofarma' ? 'text-blue-600' : 'text-stone-400 group-hover:text-blue-600'} transition-colors`} />
+                        <h3 className={`text-lg font-bold mb-2 ${activeBrand === 'biofarma' ? 'text-stone-900' : 'text-stone-600 group-hover:text-stone-900'}`}>BioFarma Natural</h3>
+                        <p className="text-sm text-stone-500 font-medium flex items-center gap-2">Explorar <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" /></p>
+                    </a>
+                </div>
+            </div>
+
+            {/* Banners Slider */}
+            {brandBanners.length > 0 && (
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 relative z-20 animate-slide-up" style={{animationDelay: '0.8s'}}>
+                    <div className="relative rounded-[2rem] overflow-hidden shadow-2xl group">
+                        <div className="relative h-[300px] md:h-[400px]">
+                            <img src={currentBanner.image} alt={currentBanner.title} className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700" />
+                            <div className={`absolute inset-0 bg-gradient-to-r ${activeBrand === 'informa' ? 'from-black/80 via-black/40 to-transparent' : activeBrand === 'iqual' ? 'from-slate-900/80 via-slate-900/40 to-transparent' : activeBrand === 'biofarma' ? 'from-blue-900/60 via-blue-900/20 to-transparent' : 'from-emerald-900/60 via-emerald-900/20 to-transparent'}`}></div>
+                            <div className="absolute inset-0 flex flex-col justify-center p-8 md:p-16">
+                                <div className="max-w-xl animate-fade-in">
+                                    <span className={`inline-block px-4 py-1 rounded-full text-xs font-black uppercase tracking-wider mb-4 ${content.accentColor} ${content.textColor} shadow-lg`}>
+                                        Oferta Especial
+                                    </span>
+                                    <h2 className={`text-4xl md:text-5xl font-black mb-4 leading-none ${activeBrand === 'informa' || activeBrand === 'iqual' ? 'text-white' : 'text-white'}`}>
+                                        {currentBanner.title}
+                                    </h2>
+                                    <p className={`text-lg mb-8 ${activeBrand === 'informa' || activeBrand === 'iqual' ? 'text-gray-200' : 'text-white/90'}`}>
+                                        {currentBanner.description}
+                                    </p>
                                     <button 
-                                        key={idx}
-                                        onClick={() => setActiveBannerIndex(idx)}
-                                        className={`w-2 h-2 rounded-full transition-all ${
-                                            idx === activeBannerIndex 
-                                                ? (activeBrand === 'informa' ? 'bg-[#ccff00] w-4' : activeBrand === 'iqual' ? 'bg-indigo-500 w-4' : activeBrand === 'biofarma' ? 'bg-blue-900 w-4' : 'bg-emerald-800 w-4')
-                                                : 'bg-gray-400'
-                                        }`}
-                                    />
-                                ))}
+                                        onClick={() => handleAddBundle(currentBanner)}
+                                        className={`px-8 py-4 rounded-xl font-bold flex items-center gap-3 group ${content.accentColor} ${content.textColor} shadow-lg hover:scale-105 transition-transform`}
+                                    >
+                                        <ShoppingCart className="w-5 h-5" />
+                                        <span className="flex flex-col text-left leading-none">
+                                            <span className="text-xs opacity-80">Comprar Pack</span>
+                                            <span className="text-lg">Aprovechar Oferta</span>
+                                        </span>
+                                    </button>
+                                </div>
                             </div>
+                        </div>
+
+                        {brandBanners.length > 1 && (
+                            <>
+                                <button onClick={prevBanner} className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/20 text-white hover:bg-black/40 backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100">
+                                    <ChevronLeft className="w-6 h-6" />
+                                </button>
+                                <button onClick={nextBanner} className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/20 text-white hover:bg-black/40 backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100">
+                                    <ChevronRight className="w-6 h-6" />
+                                </button>
+                                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                                    {brandBanners.map((_, idx) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => setCurrentBannerIndex(idx)}
+                                            className={`w-3 h-3 rounded-full transition-all ${
+                                                currentBannerIndex === idx 
+                                                ? content.accentColor + ' w-8' 
+                                                : 'bg-white/40 hover:bg-white/60'
+                                            }`}
+                                        />
+                                    ))}
+                                </div>
+                            </>
                         )}
                     </div>
-                    
-                    <h3 className={`text-xl font-bold mb-2 leading-tight ${textStyleTitle}`}>
-                        {banner.title}
-                    </h3>
-                    <p className={`text-sm mb-4 line-clamp-2 ${textStyleDesc}`}>
-                        {banner.description}
-                    </p>
-
-                    <button 
-                        onClick={() => handleBannerClick(banner)}
-                        className={`w-full py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all ${btnStyle}`}
-                    >
-                        {hasAction ? (
-                            <>
-                                AGREGAR AL PACK 
-                                {banner.discountPercentage ? `(-${banner.discountPercentage}%)` : ''}
-                                <ShoppingBag className="w-4 h-4" />
-                            </>
-                        ) : (
-                            <>VER PROMOCIÓN <ArrowRight className="w-4 h-4" /></>
-                        )}
-                    </button>
                 </div>
-             </div>
+            )}
         </div>
     );
-  };
-
-  if (activeBrand === 'informa') {
-    return (
-      <div className="relative pt-20 pb-16 md:pt-32 md:pb-24 overflow-hidden bg-black min-h-[600px] flex items-center">
-        {/* Dynamic Background */}
-        {siteContent.sportsHeroBg && (
-            <div className="absolute inset-0 z-0">
-                <img src={siteContent.sportsHeroBg} alt="Sports Background" className="w-full h-full object-cover opacity-60" />
-                <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent"></div>
-            </div>
-        )}
-        
-        {/* Abstract Background Shapes (Fallback if no image) */}
-        {!siteContent.sportsHeroBg && (
-            <>
-                <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-[#ccff00] opacity-10 blur-3xl"></div>
-                <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-gray-800 opacity-20 blur-2xl"></div>
-                {/* Dynamic Lines from PDF Style */}
-                <div className="absolute inset-0 overflow-hidden">
-                    <div className="absolute -right-20 top-0 w-[500px] h-full bg-gradient-to-l from-[#ccff00]/10 to-transparent skew-x-12 transform origin-bottom-right"></div>
-                </div>
-            </>
-        )}
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row flex-wrap items-center w-full z-10">
-          <div className="text-center md:text-left md:w-1/2 z-40 relative">
-            <h1 className="text-5xl md:text-7xl font-black text-white italic tracking-tighter mb-6 relative z-50">
-              {siteContent.sportsHeroTitle1} <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ccff00] to-green-400">
-                {siteContent.sportsHeroTitle2}
-              </span>
-            </h1>
-            <p className="mt-4 max-w-lg mx-auto md:mx-0 text-xl text-gray-300 relative z-50">
-              {siteContent.sportsHeroDescription}
-            </p>
-            <div className="mt-8 flex justify-center md:justify-start gap-4 relative z-50">
-              <button className="px-8 py-4 bg-[#ccff00] text-black font-black italic rounded transform hover:scale-105 transition-transform shadow-[0_0_20px_rgba(204,255,0,0.4)] flex items-center">
-                VER CATÁLOGO <ChevronRight className="ml-2 w-5 h-5" />
-              </button>
-            </div>
-          </div>
-          
-          <div className="md:w-1/2 mt-10 md:mt-0 relative hidden md:block z-0">
-             {!siteContent.sportsHeroBg && (
-                 <div className="relative z-0 w-full h-[400px] bg-gradient-to-b from-gray-900 to-black rounded-xl border border-gray-800 p-6 flex items-center justify-center group opacity-50">
-                     <img 
-                        src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=800&auto=format&fit=crop" 
-                        alt="Athlete" 
-                        className="rounded-lg opacity-80 group-hover:opacity-100 transition-opacity duration-500 object-cover w-full h-full"
-                     />
-                 </div>
-             )}
-          </div>
-          {renderBanner()}
-        </div>
-      </div>
-    );
-  }
-
-  if (activeBrand === 'iqual') {
-    return (
-      <div className="relative pt-20 pb-16 md:pt-32 md:pb-24 overflow-hidden bg-slate-900 min-h-[600px] flex items-center">
-         {/* Dynamic Background */}
-         {siteContent.fragranceHeroBg && (
-            <div className="absolute inset-0 z-0">
-                <img src={siteContent.fragranceHeroBg} alt="Fragrance Background" className="w-full h-full object-cover opacity-50" />
-                <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/80 to-transparent"></div>
-            </div>
-        )}
-
-        {/* Minimalist Shapes (Fallback) */}
-        {!siteContent.fragranceHeroBg && (
-            <>
-                <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-indigo-900/20 rounded-full blur-[120px]"></div>
-                <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-slate-700/20 rounded-full blur-[100px]"></div>
-            </>
-        )}
-        
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row flex-wrap items-center w-full z-10">
-          <div className="text-center md:text-left md:w-1/2 z-40 relative">
-            <span className="inline-block px-4 py-1 rounded-sm border border-indigo-500/30 text-indigo-300 text-xs font-bold mb-6 tracking-[0.3em] uppercase relative z-50">
-                Fragancias & Cuidado
-            </span>
-            <h1 className="text-5xl md:text-7xl font-sans font-light text-white mb-6 leading-tight relative z-50 tracking-wide">
-              {siteContent.fragranceHeroTitle1} <br />
-              <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
-                {siteContent.fragranceHeroTitle2}
-              </span>.
-            </h1>
-            <p className="mt-4 max-w-lg mx-auto md:mx-0 text-xl text-slate-300 font-light leading-relaxed relative z-50">
-              {siteContent.fragranceHeroDescription}
-            </p>
-            <div className="mt-8 flex justify-center md:justify-start gap-4 relative z-50">
-              <button className="px-8 py-3 bg-white text-slate-900 font-bold tracking-widest text-sm hover:bg-indigo-50 transition-colors shadow-lg flex items-center rounded-sm">
-                VER COLECCIÓN
-              </button>
-            </div>
-          </div>
-          
-          <div className="md:w-1/2 mt-10 md:mt-0 relative hidden md:block z-0">
-             {!siteContent.fragranceHeroBg && (
-                 <div className="relative z-0 w-full h-[500px] flex items-center justify-center">
-                     {/* Decorative Circle */}
-                     <div className="absolute inset-0 border border-white/5 rounded-full scale-90"></div>
-                     <div className="absolute inset-0 border border-indigo-500/10 rounded-full scale-75 animate-pulse"></div>
-                     <img 
-                        src="https://images.unsplash.com/photo-1615634260167-c8cdede054de?q=80&w=800&auto=format&fit=crop" 
-                        alt="Fragrance" 
-                        className="relative z-10 rounded-sm shadow-2xl object-cover h-[450px] w-[350px] opacity-80 grayscale hover:grayscale-0 transition-all duration-700"
-                     />
-                 </div>
-             )}
-          </div>
-          {renderBanner()}
-        </div>
-      </div>
-    );
-  }
-
-  if (activeBrand === 'biofarma') {
-    return (
-      <div className="relative pt-24 pb-16 md:pt-36 md:pb-24 overflow-hidden bg-white min-h-[600px] flex items-center">
-         
-         {/* Dynamic Background */}
-         {siteContent.bioHeroBg && (
-            <div className="absolute inset-0 z-0">
-                <img src={siteContent.bioHeroBg} alt="BioFarma Background" className="w-full h-full object-cover opacity-50" />
-                <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 to-transparent"></div>
-            </div>
-        )}
-
-         {/* Medical / Natural Background (Fallback) */}
-         {!siteContent.bioHeroBg && (
-            <>
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-white"></div>
-                {/* DNA / Molecular structure abstract shapes */}
-                <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-[radial-gradient(circle,_var(--tw-gradient-stops))] from-green-100/40 via-transparent to-transparent opacity-60 blur-3xl"></div>
-                <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-[radial-gradient(circle,_var(--tw-gradient-stops))] from-blue-100/40 via-transparent to-transparent opacity-60 blur-3xl"></div>
-            </>
-         )}
-         
-         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row flex-wrap items-center w-full z-10">
-            <div className="text-center md:text-left md:w-1/2 z-40 relative">
-              <span className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-blue-100 text-blue-900 text-sm font-bold mb-6 tracking-wide uppercase relative z-50">
-                  <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                  Salud Integral
-              </span>
-              <h1 className="text-5xl md:text-6xl font-sans font-bold text-slate-800 mb-6 leading-tight relative z-50">
-                {siteContent.bioHeroTitle1} <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-green-600">
-                  {siteContent.bioHeroTitle2}
-                </span>
-              </h1>
-              <p className="mt-4 max-w-lg mx-auto md:mx-0 text-xl text-slate-600 leading-relaxed relative z-50">
-                {siteContent.bioHeroDescription}
-              </p>
-              <div className="mt-8 flex justify-center md:justify-start gap-4 relative z-50">
-                <button className="px-8 py-3 bg-blue-900 text-white font-bold rounded-lg hover:bg-blue-800 transition-all shadow-lg hover:shadow-blue-900/20 flex items-center">
-                  Ver Vademécum
-                </button>
-              </div>
-            </div>
-            
-            <div className="md:w-1/2 mt-12 md:mt-0 relative hidden md:block z-0">
-               {!siteContent.bioHeroBg && (
-                   <div className="relative w-full h-[500px] flex items-center justify-center">
-                      <div className="absolute w-[400px] h-[400px] border-2 border-blue-100 rounded-full animate-[spin_60s_linear_infinite]"></div>
-                      <div className="absolute w-[350px] h-[350px] border border-green-100 rounded-full animate-[spin_40s_linear_infinite_reverse]"></div>
-                      <img 
-                          src="https://images.unsplash.com/photo-1576091160550-21878bf7295f?q=80&w=800&auto=format&fit=crop" 
-                          alt="Science" 
-                          className="relative z-10 rounded-2xl shadow-2xl object-cover w-[400px] h-[500px]"
-                      />
-                   </div>
-               )}
-            </div>
-            {renderBanner()}
-          </div>
-      </div>
-    );
-  }
-
-  // Phisis Theme (Default)
-  return (
-    <div className="relative pt-24 pb-16 md:pt-36 md:pb-24 overflow-hidden bg-stone-50 min-h-[600px] flex items-center">
-        
-        {/* Dynamic Background */}
-        {siteContent.beautyHeroBg && (
-            <div className="absolute inset-0 z-0">
-                <img src={siteContent.beautyHeroBg} alt="Phisis Background" className="w-full h-full object-cover opacity-60" />
-                <div className="absolute inset-0 bg-gradient-to-r from-stone-50 via-stone-50/80 to-transparent"></div>
-            </div>
-        )}
-
-       {/* Fallback Abstract */}
-       {!siteContent.beautyHeroBg && (
-           <>
-               <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div>
-               <div className="absolute top-20 left-10 w-64 h-64 bg-emerald-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-               <div className="absolute top-20 right-10 w-64 h-64 bg-teal-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-           </>
-       )}
-
-       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row flex-wrap items-center w-full z-10">
-          <div className="text-center md:text-left md:w-1/2 z-40 relative">
-            <span className="inline-block px-4 py-1 rounded-full bg-emerald-100 text-emerald-800 text-sm font-semibold mb-4 tracking-widest uppercase relative z-50">
-                Nutricosmética Celular
-            </span>
-            <h1 className="text-5xl md:text-6xl font-serif text-emerald-950 mb-6 leading-tight relative z-50">
-              {siteContent.beautyHeroTitle1} <br />
-              <span className="italic text-emerald-700">{siteContent.beautyHeroTitle2}</span>
-            </h1>
-            <p className="mt-4 max-w-lg mx-auto md:mx-0 text-xl text-stone-600 font-light leading-relaxed relative z-50">
-              {siteContent.beautyHeroDescription}
-            </p>
-            <div className="mt-8 flex justify-center md:justify-start gap-4 relative z-50">
-              <button className="px-8 py-3 bg-emerald-800 text-white font-serif rounded-full hover:bg-emerald-900 transition-colors shadow-lg flex items-center">
-                Descubrir Colección
-              </button>
-            </div>
-          </div>
-           <div className="md:w-1/2 mt-12 md:mt-0 flex justify-center relative hidden md:flex z-0">
-             {!siteContent.beautyHeroBg && (
-                 <div className="w-[350px] h-[450px] relative">
-                    <div className="absolute inset-0 bg-emerald-900 rounded-[2rem] transform rotate-6 opacity-10"></div>
-                    <img 
-                        src="https://images.unsplash.com/photo-1544161515-4ab6ce6db874?q=80&w=800&auto=format&fit=crop" 
-                        alt="Beauty" 
-                        className="relative z-10 rounded-[2rem] shadow-2xl object-cover w-full h-full opacity-60"
-                    />
-                 </div>
-             )}
-          </div>
-          {renderBanner()}
-        </div>
-    </div>
-  );
 };
 
 export default Hero;
