@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Reseller, ResellerOrder, Message } from '../../types';
-import { Truck, CheckCircle, Clock, Trash2, Package, ChevronDown, ChevronUp, MessageCircle, AlertTriangle } from 'lucide-react';
+import { Truck, CheckCircle, Clock, Trash2, Package, ChevronDown, ChevronUp, MessageCircle, AlertTriangle, DollarSign } from 'lucide-react';
 
 interface OrdersTabProps {
     resellers: Reseller[];
@@ -28,6 +28,30 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ resellers, setResellers, directOr
 
         const message = `Hola ${order.clientName}, tu pedido #${order.id} ha cambiado de estado a: *${order.status.toUpperCase()}*.`;
         window.open(`https://wa.me/${phone.replace(/[^\d]/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+    };
+
+    const confirmPayment = (order: ResellerOrder) => {
+        if (!window.confirm(`¿Confirmar el pago del saldo pendiente de $${order.balanceDue?.toLocaleString()}?`)) return;
+
+        const updatedOrder: ResellerOrder = {
+            ...order,
+            amountPaid: (order.amountPaid || 0) + (order.balanceDue || 0),
+            balanceDue: 0,
+            paymentStatus: 'paid'
+        };
+
+        if (order.type === 'direct' && setDirectOrders) {
+             const updatedOrders = directOrders.map(o => o.id === order.id ? updatedOrder : o);
+             setDirectOrders(updatedOrders);
+        } else if (order.resellerId) {
+             const updatedResellers = resellers.map(r => {
+                if (r.id === order.resellerId) {
+                     return { ...r, orders: r.orders.map(o => o.id === order.id ? updatedOrder : o) };
+                }
+                return r;
+            });
+            setResellers(updatedResellers);
+        }
     };
 
     const updateOrderStatus = (order: ResellerOrder & { resellerId?: string }, newStatus: ResellerOrder['status']) => {
@@ -101,8 +125,8 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ resellers, setResellers, directOr
         }
     };
     
-    const resellerOrders = resellers.flatMap(r => r.orders.map(o => ({ ...o, resellerId: r.id, resellerName: r.name, type: 'reseller' })));
-    const webOrders = directOrders.map(o => ({ ...o, resellerName: 'Cliente Web', type: 'direct' }));
+    const resellerOrders = resellers.flatMap(r => r.orders.map(o => ({ ...o, resellerId: r.id, resellerName: r.name, type: 'reseller' as const })));
+    const webOrders = directOrders.map(o => ({ ...o, resellerName: 'Cliente Web', type: 'direct' as const }));
 
     const allOrders = [...webOrders, ...resellerOrders].filter(o => {
         if (filterStatus !== 'Todos' && o.status !== filterStatus) return false;
@@ -166,6 +190,16 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ resellers, setResellers, directOr
                             
                             {/* Actions & Status */}
                             <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+                                {order.balanceDue && order.balanceDue > 0 && (
+                                    <button 
+                                        onClick={() => confirmPayment(order as ResellerOrder)}
+                                        className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-xs font-bold transition-colors shadow-lg animate-bounce"
+                                        title="Cobrar Saldo Pendiente"
+                                    >
+                                        <DollarSign className="w-4 h-4" /> Cobrar
+                                    </button>
+                                )}
+
                                 {order.type === 'direct' && order.shippingInfo?.phone && (
                                     <button onClick={() => sendWhatsAppUpdate(order as any)} className="p-2 bg-green-500/10 hover:bg-green-500/20 text-green-500 rounded-lg transition-colors" title="Enviar WhatsApp al Cliente">
                                         <MessageCircle className="w-5 h-5" />
