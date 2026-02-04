@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Reseller, ResellerOrder, Message } from '../../types';
+import { Reseller, ResellerOrder, Message, Product } from '../../types';
 import { Truck, CheckCircle, Clock, Trash2, Package, ChevronDown, ChevronUp, MessageCircle, AlertTriangle, DollarSign } from 'lucide-react';
 
 interface OrdersTabProps {
@@ -7,9 +7,12 @@ interface OrdersTabProps {
     setResellers: (resellers: Reseller[]) => void;
     directOrders?: ResellerOrder[];
     setDirectOrders?: (orders: ResellerOrder[]) => void;
+    // Props para gestión de stock
+    products: Product[];
+    setProducts: (products: Product[]) => void;
 }
 
-const OrdersTab: React.FC<OrdersTabProps> = ({ resellers, setResellers, directOrders = [], setDirectOrders }) => {
+const OrdersTab: React.FC<OrdersTabProps> = ({ resellers, setResellers, directOrders = [], setDirectOrders, products, setProducts }) => {
     const [filterStatus, setFilterStatus] = useState<'Todos' | 'Pendiente' | 'En Camino' | 'Entregado'>('Todos');
     const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
@@ -22,7 +25,7 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ resellers, setResellers, directOr
         if (order.type === 'direct' && order.shippingInfo) {
             phone = order.shippingInfo.phone;
         } else {
-            alert("Para revendedores, usa el chat interno.");
+            alert("Para revendedores, usa el chat interno para coordinar.");
             return;
         }
 
@@ -56,37 +59,46 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ resellers, setResellers, directOr
 
     const updateOrderStatus = (order: ResellerOrder & { resellerId?: string }, newStatus: ResellerOrder['status']) => {
         
-        // A. SI ES PEDIDO DIRECTO (WEB)
+        // 1. DESCUENTO DE STOCK (Si pasa a En Camino o Entregado y no estaba ya ahí)
+        // Se ejecuta para AMBOS tipos de orden (Directa y Revendedor)
+        if (
+            (newStatus === 'En Camino' || newStatus === 'Entregado') && 
+            (order.status === 'Pendiente')
+        ) {
+            const updatedProducts = products.map(p => {
+                const itemInOrder = order.items.find(i => i.id === p.id);
+                if (itemInOrder) {
+                    return { ...p, stock: Math.max(0, p.stock - itemInOrder.quantity) };
+                }
+                return p;
+            });
+            setProducts(updatedProducts);
+        }
+
+        // 2. ACTUALIZACIÓN DE ESTADO (Venta Directa)
         if (order.type === 'direct' && setDirectOrders) {
             const updatedOrders = directOrders.map(o => o.id === order.id ? { ...o, status: newStatus } : o);
             setDirectOrders(updatedOrders);
             return;
         }
 
-        // B. SI ES PEDIDO DE REVENDEDOR
+        // 3. ACTUALIZACIÓN DE ESTADO (Pedido Revendedor)
         if (order.resellerId) {
             const updatedResellers = resellers.map(r => {
                 if (r.id === order.resellerId) {
                     const currentOrder = r.orders.find(o => o.id === order.id);
                     if (!currentOrder || currentOrder.status === newStatus) return r;
 
-                    // Lógica de Stock Inteligente
-                    let updatedStock = [...r.stock];
+                    // Lógica de Stock Local del Revendedor (Acreditar)
+                    let updatedResellerStock = [...r.stock];
                     if (newStatus === 'Entregado' && currentOrder.status !== 'Entregado') {
                         currentOrder.items.forEach(item => {
-                             const prodIndex = updatedStock.findIndex(p => p.id === item.id);
+                             const prodIndex = updatedResellerStock.findIndex(p => p.id === item.id);
                              if (prodIndex >= 0) {
-                                 updatedStock[prodIndex] = { ...updatedStock[prodIndex], stock: updatedStock[prodIndex].stock + item.quantity };
+                                 updatedResellerStock[prodIndex] = { ...updatedResellerStock[prodIndex], stock: updatedResellerStock[prodIndex].stock + item.quantity };
                              } else {
                                  const { quantity, ...productData } = item;
-                                 updatedStock.push({ ...productData, stock: quantity } as any);
-                             }
-                        });
-                    } else if (currentOrder.status === 'Entregado' && newStatus !== 'Entregado') {
-                         currentOrder.items.forEach(item => {
-                             const prodIndex = updatedStock.findIndex(p => p.id === item.id);
-                             if (prodIndex >= 0) {
-                                 updatedStock[prodIndex] = { ...updatedStock[prodIndex], stock: Math.max(0, updatedStock[prodIndex].stock - item.quantity) };
+                                 updatedResellerStock.push({ ...productData, stock: quantity } as any);
                              }
                         });
                     }
@@ -101,7 +113,7 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ resellers, setResellers, directOr
                         read: false
                     };
 
-                    return { ...r, orders: updatedOrders, messages: [...r.messages, notificationMsg], stock: updatedStock };
+                    return { ...r, orders: updatedOrders, messages: [...r.messages, notificationMsg], stock: updatedResellerStock };
                 }
                 return r;
             });
@@ -179,7 +191,6 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ resellers, setResellers, directOr
                                         <Clock className="w-3 h-3" /> {order.date} <span className="text-zinc-600">|</span> {order.items.length} items <span className="text-zinc-600">|</span> ID: {order.id}
                                     </p>
                                     
-                                    {/* ALERTA DE PAGO PENDIENTE */}
                                     {order.balanceDue && order.balanceDue > 0 && (
                                         <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-red-500/20 text-red-400 text-xs font-bold rounded-lg border border-red-500/30 animate-pulse">
                                             <AlertTriangle className="w-3 h-3" /> SALDO PENDIENTE: ${order.balanceDue.toLocaleString()}
@@ -188,7 +199,6 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ resellers, setResellers, directOr
                                 </div>
                             </div>
                             
-                            {/* Actions & Status */}
                             <div className="flex items-center gap-3 w-full md:w-auto justify-end">
                                 {order.balanceDue && order.balanceDue > 0 && (
                                     <button 
@@ -226,7 +236,6 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ resellers, setResellers, directOr
                             </div>
                         </div>
 
-                        {/* DETALLE EXPANDIDO */}
                         {expandedOrderId === order.id && (
                             <div className="border-t border-white/5 bg-black/20 p-6 animate-fade-in grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
