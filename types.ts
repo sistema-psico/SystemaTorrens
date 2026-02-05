@@ -117,7 +117,25 @@ export interface Banner {
   relatedProducts: PromotionItem[];
 }
 
-export type Category = 'Todos' | 'Alto Rendimiento' | 'Adelgazantes' | 'Energizantes' | 'Nutricosmética' | 'Cuidado Piel' | 'Fragancias' | 'Cuidado Corporal' | 'Facial' | 'Salud Integral' | 'Peptonas' | 'Revitalización' | 'Genética';
+// AQUÍ ESTÁN AGREGADAS LAS NUEVAS CATEGORÍAS
+export type Category = 
+    | 'Todos' 
+    | 'Alto Rendimiento' 
+    | 'Adelgazantes' 
+    | 'Energizantes' 
+    | 'Nutricosmética' 
+    | 'Cuidado Piel' 
+    | 'Fragancias' 
+    | 'Cuidado Corporal' 
+    | 'Facial' 
+    | 'Salud Integral' 
+    | 'Peptonas' 
+    | 'Revitalización' 
+    | 'Genética' 
+    | 'Creatina y BCAA' // Asegurado
+    | 'Masculino'       // Nuevo
+    | 'Femenino'        // Nuevo
+    | 'Unisex';         // Nuevo
 
 export interface Client {
   id: string;
@@ -161,7 +179,7 @@ export interface ResellerOrder {
   amountPaid?: number; 
   balanceDue?: number; 
   paymentStatus?: 'paid' | 'partial' | 'pending';
-  appliedCoupon?: string; // Nuevo campo para guardar el cupón usado
+  appliedCoupon?: string;
 }
 
 export interface Sale {
@@ -172,7 +190,7 @@ export interface Sale {
   items: CartItem[];
   total: number;
   paymentMethod: string;
-  appliedCoupon?: string; // Nuevo campo
+  appliedCoupon?: string;
 }
 
 export interface Reseller {
