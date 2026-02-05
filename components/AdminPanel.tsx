@@ -3,7 +3,7 @@ import { Product, ContactInfo, Banner, Reseller, Client, SiteContent, PaymentCon
 import { 
   X, Settings, Package, LayoutDashboard, 
   Tag, Users, UserCircle, Bell, BarChart3, 
-  Truck, Menu
+  Truck, Menu, Star // Importamos Star para el icono
 } from 'lucide-react';
 
 import InventoryTab from './admin/InventoryTab';
@@ -15,6 +15,7 @@ import AnalyticsTab from './admin/AnalyticsTab';
 import SettingsTab from './admin/SettingsTab';
 import OrdersTab from './admin/OrdersTab';
 import AdminSales from './admin/AdminSales';
+import SocialReviewsTab from './admin/SocialReviewsTab'; // IMPORTAMOS LA NUEVA PESTAÑA
 
 interface AdminPanelProps {
   products: Product[];
@@ -38,7 +39,6 @@ interface AdminPanelProps {
   setDirectOrders?: (orders: ResellerOrder[]) => void;
   adminSales?: Sale[];
   setAdminSales?: (sales: Sale[]) => void;
-  // Cupones
   coupons?: Coupon[];
   setCoupons?: (coupons: Coupon[]) => void;
 }
@@ -50,11 +50,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   directOrders = [], setDirectOrders, adminSales = [], setAdminSales,
   coupons = [], setCoupons
 }) => {
-  const [activeTab, setActiveTab] = useState<'inventory' | 'settings' | 'promotions' | 'resellers' | 'clients' | 'messages' | 'analytics' | 'orders' | 'adminSales'>('orders');
+  // AGREGAMOS 'reviews' AL ESTADO DE PESTAÑAS
+  const [activeTab, setActiveTab] = useState<'inventory' | 'settings' | 'promotions' | 'resellers' | 'clients' | 'messages' | 'analytics' | 'orders' | 'reviews'>('orders');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   if (!products || !contactInfo || !siteContent) {
-      return <div className="min-h-screen bg-zinc-900 text-white flex items-center justify-center">Cargando...</div>;
+      return <div className="min-h-screen bg-zinc-900 text-white flex items-center justify-center">Cargando panel...</div>;
   }
 
   const totalUnreadMessages = resellers.reduce((acc, r) => acc + r.messages.filter(m => m.sender === 'reseller' && !m.read).length, 0);
@@ -70,6 +71,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   return (
     <div className="min-h-screen relative bg-[#0a0a0a] font-sans text-gray-200 selection:bg-[#ccff00] selection:text-black overflow-hidden flex flex-col md:flex-row">
       
+      {/* Background Decorativo */}
       <div className="fixed inset-0 z-0 pointer-events-none">
          <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-[#ccff00]/10 rounded-full blur-[100px] animate-blob"></div>
          <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-900/10 rounded-full blur-[100px] animate-blob animation-delay-2000"></div>
@@ -85,6 +87,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           </button>
       </div>
 
+      {/* Overlay */}
       {isSidebarOpen && (
           <div className="fixed inset-0 bg-black/80 z-40 md:hidden" onClick={() => setIsSidebarOpen(false)}></div>
       )}
@@ -102,6 +105,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             { id: 'orders', icon: Truck, label: 'Pedidos', badge: totalPending, badgeColor: 'bg-blue-600' },
             { id: 'inventory', icon: Package, label: 'Inventario' },
             { id: 'promotions', icon: Tag, label: 'Promociones' },
+            { id: 'reviews', icon: Star, label: 'Reseñas' }, // <--- NUEVO BOTÓN
             { id: 'analytics', icon: BarChart3, label: 'Estadísticas' },
             { id: 'messages', icon: Bell, label: 'Mensajes', badge: totalUnreadMessages, badgeColor: 'bg-red-500' },
             { id: 'resellers', icon: Users, label: 'Revendedores' },
@@ -137,16 +141,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>
       </div>
 
+      {/* MAIN CONTENT */}
       <div className="flex-1 p-4 md:p-8 z-10 overflow-y-auto h-[calc(100vh-64px)] md:h-screen">
         {activeTab === 'inventory' && <InventoryTab products={products} setProducts={setProducts} resellers={resellers} />}
-        {activeTab === 'orders' && <OrdersTab resellers={resellers} setResellers={setResellers} directOrders={directOrders} setDirectOrders={setDirectOrders!} products={products} setProducts={setProducts} adminClients={adminClients} setAdminClients={setAdminClients} coupons={coupons} />}
+        {activeTab === 'orders' && <OrdersTab resellers={resellers} setResellers={setResellers} directOrders={directOrders} setDirectOrders={setDirectOrders!} products={products} setProducts={setProducts} adminClients={adminClients} setAdminClients={setAdminClients} />}
         {activeTab === 'promotions' && <PromotionsTab banners={banners} setBanners={setBanners} products={products} coupons={coupons} setCoupons={setCoupons!} />}
+        {/* RENDERIZAR LA NUEVA PESTAÑA */}
+        {activeTab === 'reviews' && <SocialReviewsTab reviews={socialReviews} setReviews={setSocialReviews} />}
         {activeTab === 'resellers' && <ResellersTab resellers={resellers} setResellers={setResellers} products={products} />}
         {activeTab === 'clients' && <ClientsTab adminClients={adminClients} setAdminClients={setAdminClients} />}
         {activeTab === 'messages' && <MessagesTab resellers={resellers} setResellers={setResellers} />}
         {activeTab === 'analytics' && <AnalyticsTab products={products} resellers={resellers} adminSales={adminSales!} setResellers={setResellers} />}
         {activeTab === 'settings' && <SettingsTab siteContent={siteContent} setSiteContent={setSiteContent} contactInfo={contactInfo} setContactInfo={setContactInfo} paymentConfig={paymentConfig} setPaymentConfig={setPaymentConfig} />}
-        {activeTab === 'adminSales' && <AdminSales products={products} setProducts={setProducts} adminClients={adminClients} setAdminClients={setAdminClients} adminSales={adminSales} setAdminSales={setAdminSales!} coupons={coupons} />}
       </div>
     </div>
   );
