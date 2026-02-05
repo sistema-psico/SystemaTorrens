@@ -30,17 +30,20 @@ const InventoryTab: React.FC<InventoryTabProps> = ({ products, setProducts, rese
         setToast({ show: true, message, type });
     };
 
-    // Lista oficial de categorías para evitar errores de tipeo
+    // LISTA ACTUALIZADA CON TUS REQUERIMIENTOS
     const availableCategories: Category[] = [
         'Alto Rendimiento', 
         'Adelgazantes', 
         'Energizantes', 
+        'Creatina y BCAA', // Asegurado
         'Nutricosmética', 
         'Cuidado Piel', 
-        'Creatina y BCAA',
-        'Fragancias', 
         'Cuidado Corporal', 
         'Facial', 
+        'Fragancias', 
+        'Masculino', // Nuevo para Phisis Fragancias
+        'Femenino',  // Nuevo para Phisis Fragancias
+        'Unisex',    // Nuevo para Phisis Fragancias
         'Salud Integral', 
         'Peptonas', 
         'Revitalización', 
@@ -153,7 +156,7 @@ const InventoryTab: React.FC<InventoryTabProps> = ({ products, setProducts, rese
                             <option value="all">Todas las Marcas</option>
                             <option value="informa">In Forma</option>
                             <option value="phisis">Phisis</option>
-                            <option value="iqual">Iqual</option>
+                            <option value="iqual">Phisis Fragancias</option>
                             <option value="biofarma">BioFarma</option>
                         </select>
                     </div>
@@ -290,12 +293,11 @@ const InventoryTab: React.FC<InventoryTabProps> = ({ products, setProducts, rese
                                 >
                                     <option value="informa">In Forma</option>
                                     <option value="phisis">Phisis</option>
-                                    <option value="iqual">Iqual</option>
+                                    <option value="iqual">Phisis Fragancias</option>
                                     <option value="biofarma">BioFarma</option>
                                 </select>
                             </div>
 
-                            {/* CAMBIO AQUÍ: SE REEMPLAZA EL INPUT DE TEXTO POR UN SELECT */}
                             <div>
                                 <label className="block text-xs font-bold text-zinc-400 mb-1">Categoría</label>
                                 <select
