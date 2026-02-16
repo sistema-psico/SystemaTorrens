@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Product, Brand, Reseller, Category } from '../../types';
 import { 
     Search, Plus, Edit2, Trash2, Eye, EyeOff, Upload, Loader2, Image as ImageIcon
-} from 'lucide-react';
+} from 'lucide-center';
 import Toast, { ToastType } from '../Toast';
 import { useImageUpload } from '../../hooks/useImageUpload';
 
@@ -30,20 +30,21 @@ const InventoryTab: React.FC<InventoryTabProps> = ({ products, setProducts, rese
         setToast({ show: true, message, type });
     };
 
-    // LISTA ACTUALIZADA CON TUS REQUERIMIENTOS
+    // LISTA ACTUALIZADA CON LA CATEGORÍA PROTEÍNAS
     const availableCategories: Category[] = [
         'Alto Rendimiento', 
         'Adelgazantes', 
         'Energizantes', 
-        'Creatina y BCAA', // Asegurado
+        'Proteínas',       // <--- NUEVA CATEGORÍA AGREGADA PARA EL SELECTOR
+        'Creatina y BCAA', 
         'Nutricosmética', 
         'Cuidado Piel', 
         'Cuidado Corporal', 
         'Facial', 
         'Fragancias', 
-        'Masculino', // Nuevo para Phisis Fragancias
-        'Femenino',  // Nuevo para Phisis Fragancias
-        'Unisex',    // Nuevo para Phisis Fragancias
+        'Masculino', 
+        'Femenino',  
+        'Unisex',    
         'Salud Integral', 
         'Peptonas', 
         'Revitalización', 
@@ -56,7 +57,7 @@ const InventoryTab: React.FC<InventoryTabProps> = ({ products, setProducts, rese
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (file.size > 5 * 1024 * 1024) { // 5MB max
+        if (file.size > 5 * 1024 * 1024) { 
             showToast("La imagen es muy pesada (Máx 5MB)", 'error');
             return;
         }
@@ -267,7 +268,6 @@ const InventoryTab: React.FC<InventoryTabProps> = ({ products, setProducts, rese
                                 </div>
                             </div>
 
-                            {/* Resto de campos */}
                             <div>
                                 <label className="block text-xs font-bold text-zinc-400 mb-1">Nombre del Producto</label>
                                 <input type="text" placeholder="Nombre" className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#ccff00]" value={currentProduct.name || ''} onChange={e=>setCurrentProduct({...currentProduct, name: e.target.value})} />
@@ -302,7 +302,7 @@ const InventoryTab: React.FC<InventoryTabProps> = ({ products, setProducts, rese
                                 <label className="block text-xs font-bold text-zinc-400 mb-1">Categoría</label>
                                 <select
                                     value={currentProduct.category || ''}
-                                    onChange={e => setCurrentProduct({...currentProduct, category: e.target.value})}
+                                    onChange={e => setCurrentProduct({...currentProduct, category: e.target.value as Category})}
                                     className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#ccff00]"
                                 >
                                     <option value="">Seleccionar Categoría...</option>
