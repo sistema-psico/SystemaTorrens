@@ -19,7 +19,7 @@ interface CartSidebarProps {
   coupons?: Coupon[];
 }
 
-type CheckoutStep = 'cart' | 'customer-info' | 'payment'; // Cambiado 'login' por 'customer-info'
+type CheckoutStep = 'cart' | 'customer-info' | 'payment';
 type PaymentType = 'full' | 'deposit'; 
 type PaymentMethod = 'transfer' | 'card' | 'cash';
 
@@ -31,7 +31,6 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>('');
   const [copiedAlias, setCopiedAlias] = useState(false);
   
-  // NUEVOS ESTADOS PARA DATOS MANUALES (Reemplazan a Google Auth)
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
@@ -116,9 +115,21 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
     if (appliedCoupon) message += `\nCupón ${appliedCoupon.code}: -${appliedCoupon.discountPercentage}%`;
     message += `\n*Total Final: $${total.toLocaleString()}*\n`;
     message += `Pago: ${paymentMethod.toUpperCase()} (${paymentType === 'full' ? '100%' : '50% Seña'})\n`;
-    message += `✅ A PAGAR: *$${payNowAmount.toLocaleString()}*\n`;
-    if (payLaterAmount > 0) message += `⚠️ PENDIENTE: *$${payLaterAmount.toLocaleString()}*\n`;
-    message += `\n*ENVÍO:*\n📍 ${customerAddress}\n📞 ${customerPhone}`;
+    message += `✅ A PAGAR AHORA: *$${payNowAmount.toLocaleString()}*\n`;
+    
+    // Si elige transferencia, agregamos el Alias y la instrucción del comprobante
+    if (paymentMethod === 'transfer') {
+        message += `\n*DATOS PARA TRANSFERENCIA:* 🏦\n`;
+        message += `Alias: *${paymentConfig.transfer.alias}*\n`;
+        message += `Banco: *${paymentConfig.transfer.bankName}*\n`;
+        message += `\n⚠️ *IMPORTANTE:* Por favor, una vez realizado el pago, envíe el comprobante a este número para confirmar su pedido.`;
+    } else {
+        message += `\n⚠️ Por favor, envíe este mensaje para que podamos procesar su pedido.`;
+    }
+
+    if (payLaterAmount > 0) message += `\n\n⚠️ PENDIENTE ENTREGA: *$${payLaterAmount.toLocaleString()}*`;
+    message += `\n\n*DATOS DE ENVÍO:*\n📍 ${customerAddress}\n📞 ${customerPhone}`;
+    if (orderNotes) message += `\n📝 Nota: ${orderNotes}`;
 
     window.open(`https://wa.me/${cleanStorePhone}?text=${encodeURIComponent(message)}`, '_blank');
     resetFlow();
