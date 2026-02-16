@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Product, Brand, Reseller, Category } from '../../types';
 import { 
     Search, Plus, Edit2, Trash2, Eye, EyeOff, Upload, Loader2, Image as ImageIcon
-} from 'lucide-center';
+} from 'lucide-react'; // <-- CORREGIDO: de 'lucide-center' a 'lucide-react'
 import Toast, { ToastType } from '../Toast';
 import { useImageUpload } from '../../hooks/useImageUpload';
 
@@ -35,7 +35,7 @@ const InventoryTab: React.FC<InventoryTabProps> = ({ products, setProducts, rese
         'Alto Rendimiento', 
         'Adelgazantes', 
         'Energizantes', 
-        'Proteínas',       // <--- NUEVA CATEGORÍA AGREGADA PARA EL SELECTOR
+        'Proteínas',       
         'Creatina y BCAA', 
         'Nutricosmética', 
         'Cuidado Piel', 
