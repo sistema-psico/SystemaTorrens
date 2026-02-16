@@ -117,12 +117,12 @@ export interface Banner {
   relatedProducts: PromotionItem[];
 }
 
-// AQUÍ ESTÁN AGREGADAS LAS NUEVAS CATEGORÍAS
 export type Category = 
     | 'Todos' 
     | 'Alto Rendimiento' 
     | 'Adelgazantes' 
     | 'Energizantes' 
+    | 'Proteínas'        // <--- NUEVA CATEGORÍA AÑADIDA
     | 'Nutricosmética' 
     | 'Cuidado Piel' 
     | 'Fragancias' 
@@ -132,10 +132,10 @@ export type Category =
     | 'Peptonas' 
     | 'Revitalización' 
     | 'Genética' 
-    | 'Creatina y BCAA' // Asegurado
-    | 'Masculino'       // Nuevo
-    | 'Femenino'        // Nuevo
-    | 'Unisex';         // Nuevo
+    | 'Creatina y BCAA' 
+    | 'Masculino'       
+    | 'Femenino'        
+    | 'Unisex';         
 
 export interface Client {
   id: string;
